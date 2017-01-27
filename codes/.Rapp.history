@@ -1,0 +1,322 @@
+# read in the data files#
+rm(list=ls())#
+graphics.off()#
+#
+library(RColorBrewer)#
+library(hexbin)#
+## Clean the data set #
+#
+if (exists("dataset")){rm(dataset)}#
+#
+## To create Figures 3, 4 and 5a #
+## Set the variable name to Bn and the forecast window to 24 hours#
+#
+whvar = "Bn"  #Bn, vr, Temp, np, Bt, Br#
+#
+wwindow = 24#
+#
+workDir = getwd()#
+#
+## Name and location of directory with results needed for this choice#
+#
+dirName = paste0("../results/corr-coh-",whvar,'-',wwindow,'hr/')#
+#
+setwd(dirName) #
+#
+file_list <- list.files(pattern=".csv")#
+#
+cat("Loading Results for Figures 3, 4 and 5a")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}#
+#
+## Set working directory back to working directory#
+#
+setwd(workDir)#
+#
+# Need to remove all lines with -999.0#
+#
+if (whvar == 'vr' || whvar == 'np' || whvar == 'Temp') {#
+rmv = -999.0#
+dataset <- dataset[!(dataset[,4] %in% rmv),]	#
+}#
+#
+if(whvar == 'Temp' || whvar == 'np') {#
+	dataset = na.omit(dataset)#
+}#
+#
+## replace the column name  'coh' with 'lsv' (Large Scale Variation)#
+#
+dataset.names <- colnames(dataset)#
+index <- which(dataset.names == 'coh')#
+dataset.names[index] = 'lsv'#
+colnames(dataset) <- dataset.names
+getwd()
+# read in the data files#
+rm(list=ls())#
+graphics.off()#
+#
+library(RColorBrewer)#
+library(hexbin)#
+## Clean the data set #
+#
+if (exists("dataset")){rm(dataset)}#
+#
+## To create Figures 3, 4 and 5a #
+## Set the variable name to Bn and the forecast window to 24 hours#
+#
+whvar = "Bn"  #Bn, vr, Temp, np, Bt, Br#
+#
+wwindow = 24#
+#
+workDir = getwd()#
+#
+## Name and location of directory with results needed for this choice#
+#
+dirName = paste0("../../corr-coh-",whvar,'-',wwindow,'hr/')#
+#
+setwd(dirName)
+file_list <- list.files(pattern=".csv")#
+#
+cat("Loading Results for Figures 3, 4 and 5a")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}
+setwd(workDir)
+getwd()
+dataset.names <- colnames(dataset)#
+index <- which(dataset.names == 'coh')#
+dataset.names[index] = 'lsv'#
+colnames(dataset) <- dataset.names
+# create a 5x5 scatterplot#
+#
+filename = paste0(subDir,'/figure3.pdf')#
+pdf(file=filename)#
+plot(dataset[,c(4,5,6,7,8)])#
+dev.off()
+# read in the data files#
+rm(list=ls())#
+graphics.off()#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+## Directory name for Plots #
+#
+## set directory name for plots and create it if needed#
+subDir = "../plots"#
+#
+if (!dir.exists(subDir)) {#
+	dir.create(subDir)#
+	cat("\n\n Created Directory for Output Plots: ", subDir, "\n\n")#
+}#
+#
+## Clean the data set #
+#
+if (exists("dataset")){rm(dataset)}#
+#
+## To create Figures 3, 4 and 5a #
+## Set the variable name to Bn and the forecast window to 24 hours#
+#
+whvar = "Bn"  #Bn, vr, Temp, np, Bt, Br#
+#
+wwindow = 24#
+#
+workDir = getwd()#
+#
+## Name and location of directory with results needed for this choice#
+dirName = paste0("../results/corr-coh-",whvar,'-',wwindow,'hr/')#
+dirName = paste0("../../corr-coh-",whvar,'-',wwindow,'hr/')#
+setwd(dirName) #
+#
+file_list <- list.files(pattern=".csv")#
+#
+cat("Loading Results for Figures 3, 4 and 5a")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}#
+#
+## Set working directory back to working directory#
+#
+setwd(workDir)#
+#
+# Need to remove all lines with -999.0#
+#
+if (whvar == 'vr' || whvar == 'np' || whvar == 'Temp') {#
+rmv = -999.0#
+dataset <- dataset[!(dataset[,4] %in% rmv),]	#
+}#
+#
+if(whvar == 'Temp' || whvar == 'np') {#
+	dataset = na.omit(dataset)#
+}#
+#
+## replace the column name  'coh' with 'lsv' (Large Scale Variation)#
+#
+dataset.names <- colnames(dataset)#
+index <- which(dataset.names == 'coh')#
+dataset.names[index] = 'lsv'#
+colnames(dataset) <- dataset.names#
+#
+# create a 5x5 scatterplot#
+#
+filename = paste0(subDir,'/figure3.pdf')#
+pdf(file=filename)#
+plot(dataset[,c(4,5,6,7,8)])#
+dev.off()
+index <- which(dataset.names == 'mseZero')#
+dataset.names[index] = 'mseBaseline'#
+colnames(dataset) <- dataset.names#
+#
+## Figure 3 - this takes a while #
+## create a 5x5 scatterplot#
+#
+filename = paste0(subDir,'/figure3.pdf')#
+pdf(file=filename)#
+plot(dataset[,c(4,5,6,7,8)])#
+dev.off()#
+#
+## ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+## Figure  4#
+## High Density Scatterplot with Binning#
+#
+x <- dataset$mse#
+y <- dataset$mseBaseline#
+mtit <- "Hexagonal Binning: MSE v. MSE-Baseline"#
+xtit <- expression("MSE" ~(nT^{2}))#
+ytit <- expression("MSE-Baseline" ~(nT^{2}))#
+#
+x1 <- c(0,20)#
+y1 <- x1#
+xmax = 10 # for Bn, Br, Bt#
+#
+xsub = ((x <= xmax) & (y <= xmax))#
+bin<-hexbin(x[xsub], y[xsub], xbins=50,xbnds=c(0,xmax), ybnds=c(0,xmax)) #
+#
+# nice color version#
+#
+rf <- colorRampPalette(rev(brewer.pal(11,'Spectral')))#
+#
+filename = paste0(subDir,'figure4.pdf')#
+#
+pdf(file=filename)#
+plot(bin, main=mtit,xlab=xtit,ylab=ytit,colramp=rf)#
+dev.off()
+filename
+## ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+## Figure  5a#
+## Ratio of MSE to MSE-baseline#
+#
+ratioMSE = x/y#
+xr1 = c(0,2.)#
+nbreak = 500#
+#
+hist(ratioMSE,breaks=nbreak,xlab="MSE / MSE-Baseline",xlim=xr1,main="Ratio of MSE to MSE-Baseline")#
+#
+filename = paste0(subDir,'figure5.pdf')#
+cat("\nProcessing Figure: ", filename, "\n")#
+pdf(file=filename)#
+hist(ratioMSE,breaks=nbreak,xlab="MSE / MSE-Baseline",xlim=xr1,main="Ratio of MSE to MSE-Baseline")#
+dev.off()
+## Clean the data set #
+#
+if (exists("dataset")){rm(dataset)}#
+#
+## To create Figures 3, 4 and 5a #
+## Set the variable name to Bn and the forecast window to 24 hours#
+#
+whvar = "Bn"  #Bn, vr, Temp, np, Bt, Br#
+#
+wwindow = 6#
+#
+workDir = getwd()#
+#
+## Name and location of directory with results needed for this choice#
+dirName = paste0("../results/corr-coh-",whvar,'-',wwindow,'hr/')#
+dirName = paste0("../../corr-coh-",whvar,'-',wwindow,'hr/')#
+setwd(dirName) #
+#
+file_list <- list.files(pattern=".csv")#
+#
+cat("Loading Results for Figure 5b")#
+#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}#
+#
+## Set working directory back to working directory#
+#
+setwd(workDir)#
+#
+## replace the column name  'coh' with 'lsv' (Large Scale Variation)#
+## and mseZero with mseBaseline#
+#
+dataset.names <- colnames(dataset)#
+index <- which(dataset.names == 'coh')#
+dataset.names[index] = 'lsv'#
+colnames(dataset) <- dataset.names#
+index <- which(dataset.names == 'mseZero')#
+dataset.names[index] = 'mseBaseline'#
+colnames(dataset) <- dataset.names#
+#
+x <- dataset$mse#
+y <- dataset$mseBaseline#
+ratioMSE = x/y#
+xr1 = c(0,2.)#
+nbreak = 500#
+#
+filename = paste0(subDir,'/figure5b.pdf')#
+cat("\nProcessing Figure: ", filename, "\n")#
+pdf(file=filename)#
+hist(ratioMSE,breaks=nbreak,xlab="MSE / MSE-Baseline",xlim=xr1,main="Ratio of MSE to MSE-Baseline")#
+dev.off()
+## ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+## Figure  6b#
+## Ratio of LSV vs Predicted correlation#
+## High Density Scatterplot with Binning#
+x <- dataset$lsv#
+y <- dataset$corrPred#
+mtit <- "Hexagonal Binning: LSV v. Predicted Correlation"#
+xtit <- "LSV"#
+ytit <- "Predicted Correlation"#
+bin<-hexbin(x, y, xbins=50) #
+filename = paste0(subDir,'figure6b.pdf')#
+pdf(file=filename)#
+plot(bin,xlab=xtit,ylab=ytit,main=mtit)#
+dev.off()

@@ -1,0 +1,75 @@
+                          OMNI_MYYYY.DAT FORMAT DESCRIPTION
+                                                          
+  Logical record = 82 characters + CR/LF  
+                  
+WORD  FORMAT FILL Value   MEANING                     UNITS/COMMENTS
+                
+1       I4                Year                              1963, 1964, 1965,
+etc.
+2       I4                Decimal Day                       January 1 = Day 1  
+3       I3                Hour                              0,1,...,23 
+4      F7.1  9999.9       Heliographic Inertial Latitude    Degrees, +/-90
+                          of the Earth 
+5      F7.1  9999.9       Heliographic Inertial Longitude   Degrees, 0-360
+                          of the Earth 
+6      F6.1  999.9        BR RTN                            nanoteslas
+7      F6.1  999.9        BT RTN                            nanoteslas
+8      F6.1  999.9        BN RTN                            nanoteslas
+9      F6.1  999.9        Field Magnitude Average |B        1/N SUM |B|, nT
+10     F6.0  9999.        Bulk Flow speed                   km/s
+11     F6.1  999.9       THETA - elevation angle           Degrees        
+                          of the velocity vector (RTN) 
+12     F6.1  999.9       PHI- azimuth angle                Degrees
+                          of the velocity vector (RTN) 
+13     F6.1  999.9        ION Density                       N/cm^3
+14     F9.0  9999999.     Temperature                       Degrees, K   
+                
+                      
+                  DESCRIPTION OF COORDINATE SYSTEMS
+ 
+  The Heliographic Inertial (HGI) coordinates are Sun-centered and inertially
+  fixed with respect to an X-axis directed along the intersection line of the
+  ecliptic and solar equatorial  planes. The solar equator plane is inclined
+  at 7.25 degrees from the ecliptic. This direction was towards ecliptic 
+  longitude of 74.367 degrees  on  1  January  1900  at  1200  UT; because of
+  precession of the celestial  equator, this longitude increases by 1.4 
+  degrees/century. The Z axis  is  directed perpendicular and northward from 
+  the solar equator, and the  Y-axis  completes  the right-handed set. This 
+  system differs from the usual  heliographic  coordinates  (e.g.  Carrington
+  longitudes) which are fixed in the frame of the rotating Sun. 
+
+  The RTN system is fixed at a spacecraft (or the planet). The R  axis 
+  is directed radially away from the Sun, the T axis is the cross product of 
+  the solar rotation axis and  the  R  axis,  and  the  N  axis is the cross 
+  product of the R  and  T  axes.  At  zero  heliographic latitude, when the 
+  spacecraft is in the solar equatorial plane, the N and solar rotation axes 
+  are parallel.
+                      
+  --------------------------------------------------------------------------
+                 Convention for Latitude and Longitude Angles
+  --------------------------------------------------------------------------
+                                                       
+  Latitude  and  longitude  angles  of  solar wind plasma flow are generally
+  measured  from the radius vector away from the Sun. In all cases, latitude
+  angles  are  positive for north-going flow. The flow longitude angles have
+  been  treated differently for the near-Earth data, i.e. the OMNI, and for 
+  the deep space data. The flow is positive for  the  near-Earth  data  when
+  coming from the right side of the Sun as viewed  from  the Earth, i.e. 
+  flowing toward +Y from -X GSE or opposite to the  direction of planetary 
+  motion. On the other hand, the flow longitudes for the deep space spacecraft
+  use the opposite sign convection, i.e. positive for flow in the +T direction
+  in the RTN system.
+                                    
+  --------------------------------------------------------------------------
+
+  Acknowledgement:
+
+ Use of these data in publications should be accompanied at minimum by
+ acknowledgements of the GSFC/SPDF and OMNIWeb.   
+             
+-------------------------------------------------------------------------
+SPDF contact:
+ Dr. N. Papitashvili  E-mail: natalia.e.papitashvili@nasa.gov
+    
+---------------------------------------------------------------------
+-------------------------------------------------------------------------------- 

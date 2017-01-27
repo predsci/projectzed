@@ -1,0 +1,1218 @@
+rm(list=ls())#
+#
+graphics.off()#
+#
+library(DICE)#
+#
+pdf = TRUE#
+#
+colvec = c('cadetblue2', 'coral')#
+#
+dataType = "misccases"#
+#
+NAME_2 = "USA"#
+FY.vec = c("2010-2011", "2011-2012", "2012-2013", "2013-2014")#
+#
+year.start <- seq(from=2004,to=2015,by=1) #
+year.end  <- seq(from=2005,to=2016,by=1)#
+#
+FY.vec <- paste(year.start,'-',year.end,sep='')#
+#
+nyears <- length(FY.vec)
+filename='results/mcmc-cdc-United.States-uncpl-2009-2010-5-52-1.RData'
+load(filename)
+ls()
+names(results.list)
+is.mcmc(results.list)
+head(results.list[[1]])
+dim(results.list[[1]])
+dim(results.list)
+head(results.list[[11]])
+rm(list=ls())#
+#
+graphics.off()#
+#
+library(DICE)#
+#
+pdf = FALSE#
+#
+colvec = c('cadetblue2', 'coral')#
+#
+dataType = "misccases"#
+#
+NAME_2 = "USA"#
+FY.vec = c("2010-2011", "2011-2012", "2012-2013", "2013-2014")#
+#
+year.start <- seq(from=2004,to=2015,by=1) #
+year.end  <- seq(from=2005,to=2016,by=1)#
+#
+FY.vec <- paste(year.start,'-',year.end,sep='')#
+#
+nyears <- length(FY.vec)#
+#
+nweeksFit = 52#
+#
+dataType = 'cdc'#
+#
+mod_level = 2#
+fit_level = 3#
+RegState = 'usa'#
+isingle = 1#
+nregions = length(NAME_3_vec)#
+nyears = length(year.start)#
+#
+nreals <- 3#
+#
+Legend <- c("SH", "SV","SH+SV")#
+#
+models = seq(1:length(Legend))#
+nmodels = length(models)#
+#
+llk = rep(0, nreals)
+nyears = length(year.start)#
+#
+nreals <- 3#
+#
+Legend <- c("SH", "SV","SH+SV")#
+#
+models = seq(1:length(Legend))#
+nmodels = length(models)#
+#
+llk = rep(0, nreals)#
+#
+if (pdf == TRUE) {#
+	filename = 'results-sv-sh-models.pdf'#
+	pdf(file=filename,width = 13, height = 9)#
+}#
+par(mar = c(4, 4, 1.5, 1), mfrow = c(nyears, 6))
+iyear=1
+pdf
+year = year.start[iyear]#
+		year1 = year.end[iyear]#
+#
+		# get data for this year#
+		mydata = get.subset(start.year = year, end.year = year1, mod_level = mod_level, fit_level = fit_level, dataType = dataType)
+mod_level
+fit_level
+year
+year1
+dataType
+year
+year1
+mydata = get.subset(start.year = 2005, end.year = 2006, mod_level = mod_level, fit_level = fit_level, dataType = dataType)
+mod_level
+fit_level
+dataType
+mydata = get.subset(start.year = "2004", end.year = "2005", mod_level = 2, fit_level = 3, dataType = dataType)
+mydata = get.subset(start.year = 2014, end.year = 2015, mod_level = 2, fit_level = 3, dataType = dataType)
+data(package='DICE')
+mod_ind   = (toupper(name["NAME_2"])==diceData$attr$ABBV_2 | name["NAME_2"]==diceData$attr$NAME_2) & mod_level==diceData$attr$level #
+	  fit_ind   = (toupper(name["NAME_2"])==diceData$attr$ABBV_2 | name["NAME_2"]==diceData$attr$NAME_2) & fit_level==diceData$attr$level
+mydata = get.subset(start.year = 2014, end.year = 2015, mod_level = 2, fit_level = 3, dataType = dataType,NAME_2='USA')
+mydata = list()
+mydata = list()#
+	# Current year. Used to determine if data should be downloaded from CDC#
+	curYear = 2016
+diceData$attr$ABBV_2
+diceData$attr$level
+name = c(NAME_2="USA",NAME_3=paste0("Region",region), NAME_4=state_name)
+name = c(NAME_2="USA")
+year = year.start[iyear]#
+		year1 = year.end[iyear]#
+#
+		# get data for this year#
+		mydata = get.subset(start.year = year, end.year = year1, name = name, mod_level = mod_level, fit_level = fit_level, dataType = dataType)
+imodel = 1
+dataName = paste(dataType, "-", mydata$model$name,"-uncpl-", mydata$FY, "-",imodel, sep = "")
+dataName
+mydata$FY
+mydata
+imodel
+FY = FY.vec[iyear]
+dataName = paste(dataType, "-", mydata$model$name,"-uncpl-", FY, "-",imodel, sep = "")#
+		epi = mydata$model$epi#
+#
+		sh  = mydata$model$sh#
+		sv  = mydata$model$school#
+#
+		epi.fit = mydata$fit$epi#
+		sh.fit  = mydata$fit$sh#
+		sv.fit = mydata$fit$school#
+		school = sv#
+		school[school == 0] = NA#
+		school.fit = sv.fit#
+		school.fit[school.fit == 0] = NA#
+	    n.fit = mydata$fit$nregions#
+	    n.fit1 = n.fit + 1			#
+		weeks = mydata$weeks#
+#
+		llk = array(0,c(n.fit1,nreals))#
+		nweeks = mydata$nweeks#
+		# Load the profiles of the run #
+		tab = list()#
+		subDir = 'results'
+ireal=1
+filename = paste(subDir, "/mcmc-",dataName, "-",nweeksFit, "-", ireal, ".RData", sep = "")#
+			print(filename)#
+			load(filename)#
+			for (iregion in 1:n.fit1)#
+					tmp = results.list[[iregion]]#
+					nlines = dim(tmp)[1]#
+					ncol   = dim(tmp)[2]#
+					nlines2 = nlines / 2#
+					llk[iregion,ireal] = mean(tmp[nlines2:nlines,ncol])#
+#
+			}
+filename = paste(subDir, "/mcmc-",dataName, "-",nweeksFit, "-", ireal, ".RData", sep = "")#
+			print(filename)#
+			load(filename)#
+			for (iregion in 1:n.fit1) {#
+					tmp = results.list[[iregion]]#
+					nlines = dim(tmp)[1]#
+					ncol   = dim(tmp)[2]#
+					nlines2 = nlines / 2#
+					llk[iregion,ireal] = mean(tmp[nlines2:nlines,ncol])#
+#
+			}#
+		}
+filename = paste(subDir, "/mcmc-",dataName, "-",nweeksFit, "-", ireal, ".RData", sep = "")#
+			print(filename)#
+			load(filename)#
+			for (iregion in 1:n.fit1) {#
+					tmp = results.list[[iregion]]#
+					nlines = dim(tmp)[1]#
+					ncol   = dim(tmp)[2]#
+					nlines2 = nlines / 2#
+					llk[iregion,ireal] = mean(tmp[nlines2:nlines,ncol])#
+#
+			}
+llk[,1]
+for (ireal in 1:nreals) {#
+			filename = paste(subDir, "/mcmc-",dataName, "-",nweeksFit, "-", ireal, ".RData", sep = "")#
+			print(filename)#
+			load(filename)#
+			for (iregion in 1:n.fit1) {#
+					tmp = results.list[[iregion]]#
+					nlines = dim(tmp)[1]#
+					ncol   = dim(tmp)[2]#
+					nlines2 = nlines / 2#
+					llk[iregion,ireal] = mean(tmp[nlines2:nlines,ncol])#
+#
+			}#
+		}
+llk
+imin = rep(0,n.fit1)#
+			for (iregion in 1:n.fit1)  {#
+				imin[iregion] = which.min(llk[iregion,])#
+			}
+imin
+iregion = 1
+filename = paste(subDir, "/mcmc-",dataName, "-",nweeksFit, "-",imin[iregion], ".RData", sep = "")#
+				load(filename)#
+				tab[[iregion]] = results.list[[iregion]]
+dim(tab[[iregion]])
+filename = paste(subDir, "/profiles-",dataName, "-",nweeksFit, "-",imin[iregion], ".RData", sep = "")#
+				load(filename)
+ls
+ls()
+names(dump)
+tmp = dump$model_profile
+dim(tmp)
+dim(dump$fit_profile)
+imodel
+iregion
+print(llk)#
+	# choose the best realization for each region#
+	imin = rep(0, n.fit1)#
+#
+	for (iregion in 1:n.fit1) {#
+		imin[iregion] = which.min(llk[iregion, ])#
+	}#
+#
+	for (iregion in 1:n.fit1) {#
+#
+		filename = paste(subDir, "/mcmc-", dataName, "-", nweeksFit, "-", imin[iregion], ".RData", sep = "")#
+		load(filename)#
+		tab[[iregion]] = results.list[[iregion]]#
+#
+	}
+dim(tab[[1]])
+dim(tab[[1]])
+dim(tab[[11]])
+dim(tab[[10]])
+iregion
+iregion = 1
+tmp = tab[[iregion]]#
+			tmp = window(tmp, start = 5e+06, end = 1e+07, ithin = 1)#
+			kcol = which(colnames(tmp) == "R0")#
+			icol = which(colnames(tmp) == "deltaR")#
+			jcol = which(colnames(tmp) == "aparam")#
+			if (iregion <= n.fit) {#
+				sh.aveg = mean(sh.fit[iregion])#
+			} else {#
+				sh.aveg = mean(sh)#
+			}
+sh.fit
+if (iregion <= n.fit) {#
+				sh.aveg = mean(sh.fit[,iregion])#
+			} else {#
+				sh.aveg = mean(sh)#
+			}
+sh.aveg
+icol
+jcol
+deltaR = tmp[, icol]#
+			aparam = tmp[, jcol]#
+			tmp[, icol] = (1 + deltaR * exp(-aparam * sh.aveg))#
+#
+			densplot(tmp[, icol], ylab = "Frequency", xlab = "", main = expression("R(t)" == paste(R[0], (1 + Delta * e^{-a * q(t)}))), col = colvec[imodel], show.obs = FALSE, lwd = 2, xlim = c(1, 1.3))#
+#
+			z = fitdistr(tmp[, icol], "normal")#
+			val.mean = as.numeric(z$estimate["mean"])#
+			val.sd = as.numeric(z$estimate["sd"])#
+			nopt1 = dim(tmp)[2]#
+			llk.mean = mean(tmp[, nopt1])#
+#
+			legend = rep("", 3)#
+			legend[1] = paste("Mean ", signif(val.mean, digits = 3))#
+			legend[2] = paste("SD ", signif(val.sd, digits = 3))#
+			legend[3] = paste("AICc", signif(llk.mean, digits = 3))#
+			legend("topleft", legend = legend, bty = "n")#
+			legend("topright", legend = expression((1 + Delta * e^{#
+				-a * bar(q(t))#
+			})), cex = 1.5, bty = "n")
+densplot(tmp[,kcol] * tmp[, icol], ylab = "Frequency", xlab = "", main = expression("R(t)" == paste(R[0], (1 + Delta * e^{-a * q(t)}))), col = colvec[imodel], show.obs = FALSE, lwd = 2, xlim = c(1, 1.3))
+rm(list=ls())#
+#
+graphics.off()#
+#
+library(DICE)#
+#
+pdf = FALSE#
+#
+colvec = c('cadetblue2', 'coral')#
+#
+dataType = "misccases"#
+#
+NAME_2 = "USA"#
+FY.vec = c("2010-2011", "2011-2012", "2012-2013", "2013-2014")#
+#
+year.start <- seq(from=2004,to=2015,by=1) #
+year.end  <- seq(from=2005,to=2016,by=1)#
+#
+FY.vec <- paste(year.start,'-',year.end,sep='')#
+#
+nyears <- length(FY.vec)#
+#
+nweeksFit = 52#
+#
+dataType = 'cdc'#
+#
+mod_level = 2#
+fit_level = 3#
+RegState = 'usa'#
+name = c(NAME_2="USA")#
+#
+isingle = 1#
+#
+nyears = length(year.start)#
+#
+nreals <- 3#
+#
+Legend <- c("SH", "SV","SH+SV")#
+#
+models = seq(1:length(Legend))#
+nmodels = length(models)#
+#
+llk = rep(0, nreals)#
+#
+if (pdf == TRUE) {#
+	filename = 'results-sv-sh-models.pdf'#
+	pdf(file=filename,width = 13, height = 9)#
+}#
+par(mar = c(4, 4, 1.5, 1), mfrow = c(4,3))#
+##for (imodel in 1:nmodels) {#
+#
+##	for (iyear in 1:nyears) {#
+for (imodel in 1:1) {#
+#
+	for (iyear in 1:1) {#
+#
+		FY = FY.vec[iyear]#
+#
+		year = year.start[iyear]#
+		year1 = year.end[iyear]#
+#
+		# get data for this year#
+		mydata = get.subset(start.year = year, end.year = year1, name = name, mod_level = mod_level, fit_level = fit_level, dataType = dataType)#
+#
+		dataName = paste(dataType, "-", mydata$model$name, "-uncpl-", FY, "-", imodel, sep = "")#
+#
+		epi = mydata$model$epi#
+#
+		sh = mydata$model$sh#
+#
+		sv = mydata$model$school#
+#
+		epi.fit = mydata$fit$epi#
+#
+		sh.fit = mydata$fit$sh#
+#
+		sv.fit = mydata$fit$school#
+#
+		school = sv#
+#
+		school[school == 0] = NA#
+#
+		school.fit = sv.fit#
+#
+		school.fit[school.fit == 0] = NA#
+#
+		n.fit = mydata$fit$nregions#
+#
+		n.fit1 = n.fit + 1#
+#
+		weeks = mydata$weeks#
+#
+		llk = array(0, c(n.fit1, nreals))#
+		nweeks = mydata$nweeks#
+#
+		# Load the profiles of the run #
+		tab = list()#
+		subDir = "results"#
+		for (ireal in 1:nreals) {#
+			filename = paste(subDir, "/mcmc-", dataName, "-", nweeksFit, "-", ireal, ".RData", sep = "")#
+			print(filename)#
+			load(filename)#
+#
+			for (iregion in 1:n.fit1) {#
+				tmp = results.list[[iregion]]#
+#
+				nlines = dim(tmp)[1]#
+				ncol = dim(tmp)[2]#
+				nlines2 = nlines/2#
+				llk[iregion, ireal] = mean(tmp[nlines2:nlines, ncol])#
+#
+			}#
+		}#
+#
+		print(llk)#
+		# choose the best realization for each region#
+		imin = rep(0, n.fit1)#
+#
+		for (iregion in 1:n.fit1) {#
+			imin[iregion] = which.min(llk[iregion, ])#
+		}#
+#
+		for (iregion in 1:n.fit1) {#
+#
+			filename = paste(subDir, "/mcmc-", dataName, "-", nweeksFit, "-", imin[iregion], ".RData", sep = "")#
+			load(filename)#
+			tab[[iregion]] = results.list[[iregion]]#
+#
+		}#
+#
+		## SH model#
+		if (imodel == 1) {#
+#
+			for (iregion in 1:n.fit1) {#
+				tmp = tab[[iregion]]#
+				tmp = window(tmp, start = 5e+06, end = 1e+07, ithin = 1)#
+				kcol = which(colnames(tmp) == "R0")#
+				icol = which(colnames(tmp) == "deltaR")#
+				jcol = which(colnames(tmp) == "aparam")#
+#
+				if (iregion <= n.fit) {#
+					sh.aveg = mean(sh.fit[, iregion])#
+				} else {#
+					sh.aveg = mean(sh)#
+				}#
+				# lets replace the deltaR column with (1+deltaR * exp(-a*<q(t)>))#
+				deltaR = tmp[, icol]#
+				aparam = tmp[, jcol]#
+				tmp[, icol] = (1 + deltaR * exp(-aparam * sh.aveg))#
+#
+				densplot(tmp[, icol], ylab = "Frequency", xlab = "", main = expression("R(t)" ~ paste((1 + Delta * e^{-a * q(t)}))), col = colvec[imodel], show.obs = FALSE, lwd = 2, xlim = c(1, 1.3))#
+#
+				z = fitdistr(tmp[, icol], "normal")#
+				val.mean = as.numeric(z$estimate["mean"])#
+				val.sd = as.numeric(z$estimate["sd"])#
+				nopt1 = dim(tmp)[2]#
+				llk.mean = mean(tmp[, nopt1])#
+#
+				legend = rep("", 3)#
+				legend[1] = paste("Mean ", signif(val.mean, digits = 3))#
+				legend[2] = paste("SD ", signif(val.sd, digits = 3))#
+				legend[3] = paste("AICc", signif(llk.mean, digits = 3))#
+				legend("topleft", legend = legend, bty = "n")#
+				legend("topright", legend = expression((1 + Delta * e^{#
+					-a * bar(q(t))#
+				})), cex = 1.5, bty = "n")#
+			}#
+		}#
+		if (imodel == 2) { ## SV Model#
+			for (iregion in 1:n.fit1) {#
+				tmp = tab[[iregion]]#
+				tmp = window(tmp, start = 5e+06, end = 1e+07, ithin = 1)#
+#
+				kcol = which(colnames(tmp) == "R0")#
+				icol = which(colnames(tmp) == "alpha")#
+#
+				densplot(tmp[, icol], ylab = "Frequency", xlab = "", main = expression(paste("SV Term - ", alpha)), show.obs = FALSE, lwd = 2, col = colvec[imodel], xlim = c(0, 1))#
+#
+				z = fitdistr(tmp[, icol], "normal")#
+				val.mean = as.numeric(z$estimate["mean"])#
+				val.sd = as.numeric(z$estimate["sd"])#
+				nlines = dim(tmp)[1]#
+				nlines2 = nlines/2#
+				nopt1 = dim(tmp)[2]#
+				llk.mean = mean(tmp[nlines2:nlines, nopt1])#
+				legend = rep("", 3)#
+				legend[1] = paste("Mean ", signif(val.mean, digits = 3))#
+				legend[2] = paste("SD ", signif(val.sd, digits = 3))#
+				legend[3] = paste("AICc", signif(llk.mean, digits = 3))#
+				legend("topleft", legend = legend, bty = "n")#
+			}#
+#
+		}#
+	} # End of loop on years#
+#
+} # End of loop on models
+names(mydata$fit)
+names(mydata$fit$name)
+mydata$fit$name
+for (iregion in 1:n.fit1) {#
+				tmp = tab[[iregion]]#
+				tmp = window(tmp, start = 5e+06, end = 1e+07, ithin = 1)#
+				kcol = which(colnames(tmp) == "R0")#
+				icol = which(colnames(tmp) == "deltaR")#
+				jcol = which(colnames(tmp) == "aparam")#
+#
+				if (iregion <= n.fit) {#
+					sh.aveg = mean(sh.fit[, iregion])#
+				} else {#
+					sh.aveg = mean(sh)#
+				}#
+				# lets replace the deltaR column with (1+deltaR * exp(-a*<q(t)>))#
+				deltaR = tmp[, icol]#
+				aparam = tmp[, jcol]#
+				tmp[, icol] = (1 + deltaR * exp(-aparam * sh.aveg))#
+#
+				regName = mydata$model$name#
+				if (iregion <= n.fit) regName = mydata$fit$name#
+				densplot(tmp[, icol], ylab = "Frequency", xlab = "", main = c(regName,FY), col = colvec[imodel], show.obs = FALSE, lwd = 2, xlim = c(1, 1.3))#
+#
+				z = fitdistr(tmp[, icol], "normal")#
+				val.mean = as.numeric(z$estimate["mean"])#
+				val.sd = as.numeric(z$estimate["sd"])#
+				nopt1 = dim(tmp)[2]#
+				llk.mean = mean(tmp[, nopt1])#
+#
+				legend = rep("", 3)#
+				legend[1] = paste("Mean ", signif(val.mean, digits = 3))#
+				legend[2] = paste("SD ", signif(val.sd, digits = 3))#
+				legend[3] = paste("AICc", signif(llk.mean, digits = 3))#
+				legend("topleft", legend = legend, bty = "n")#
+				legend("topright", legend = expression((1 + Delta * e^{#
+					-a * bar(q(t))#
+				})), cex = 1.5, bty = "n")#
+			}#
+		}
+rm(list=ls())#
+#
+graphics.off()#
+#
+library(DICE)#
+#
+pdf = FALSE#
+#
+colvec = c('cadetblue2', 'coral')#
+#
+dataType = "misccases"#
+#
+NAME_2 = "USA"#
+FY.vec = c("2010-2011", "2011-2012", "2012-2013", "2013-2014")#
+#
+year.start <- seq(from=2004,to=2015,by=1) #
+year.end  <- seq(from=2005,to=2016,by=1)#
+#
+FY.vec <- paste(year.start,'-',year.end,sep='')#
+#
+nyears <- length(FY.vec)#
+#
+nweeksFit = 52#
+#
+dataType = 'cdc'#
+#
+mod_level = 2#
+fit_level = 3#
+RegState = 'usa'#
+name = c(NAME_2="USA")#
+#
+isingle = 1#
+#
+nyears = length(year.start)#
+#
+nreals <- 3#
+#
+Legend <- c("SH", "SV","SH+SV")#
+#
+models = seq(1:length(Legend))#
+nmodels = length(models)#
+#
+llk = rep(0, nreals)#
+#
+if (pdf == TRUE) {#
+	filename = 'results-sv-sh-models.pdf'#
+	pdf(file=filename,width = 13, height = 9)#
+}#
+par(mar = c(4, 4, 1.5, 1), mfrow = c(4,3))#
+##for (imodel in 1:nmodels) {#
+#
+##	for (iyear in 1:nyears) {#
+for (imodel in 1:1) {#
+#
+	for (iyear in 1:1) {#
+#
+		FY = FY.vec[iyear]#
+#
+		year = year.start[iyear]#
+		year1 = year.end[iyear]#
+#
+		# get data for this year#
+		mydata = get.subset(start.year = year, end.year = year1, name = name, mod_level = mod_level, fit_level = fit_level, dataType = dataType)#
+#
+		dataName = paste(dataType, "-", mydata$model$name, "-uncpl-", FY, "-", imodel, sep = "")#
+#
+		epi = mydata$model$epi#
+#
+		sh = mydata$model$sh#
+#
+		sv = mydata$model$school#
+#
+		epi.fit = mydata$fit$epi#
+#
+		sh.fit = mydata$fit$sh#
+#
+		sv.fit = mydata$fit$school#
+#
+		school = sv#
+#
+		school[school == 0] = NA#
+#
+		school.fit = sv.fit#
+#
+		school.fit[school.fit == 0] = NA#
+#
+		n.fit = mydata$fit$nregions#
+#
+		n.fit1 = n.fit + 1#
+#
+		weeks = mydata$weeks#
+#
+		llk = array(0, c(n.fit1, nreals))#
+		nweeks = mydata$nweeks#
+#
+		# Load the profiles of the run #
+		tab = list()#
+		subDir = "results"#
+		for (ireal in 1:nreals) {#
+			filename = paste(subDir, "/mcmc-", dataName, "-", nweeksFit, "-", ireal, ".RData", sep = "")#
+			print(filename)#
+			load(filename)#
+#
+			for (iregion in 1:n.fit1) {#
+				tmp = results.list[[iregion]]#
+#
+				nlines = dim(tmp)[1]#
+				ncol = dim(tmp)[2]#
+				nlines2 = nlines/2#
+				llk[iregion, ireal] = mean(tmp[nlines2:nlines, ncol])#
+#
+			}#
+		}#
+#
+		print(llk)#
+		# choose the best realization for each region#
+		imin = rep(0, n.fit1)#
+#
+		for (iregion in 1:n.fit1) {#
+			imin[iregion] = which.min(llk[iregion, ])#
+		}#
+#
+		for (iregion in 1:n.fit1) {#
+#
+			filename = paste(subDir, "/mcmc-", dataName, "-", nweeksFit, "-", imin[iregion], ".RData", sep = "")#
+			load(filename)#
+			tab[[iregion]] = results.list[[iregion]]#
+#
+		}#
+#
+		## SH model#
+		if (imodel == 1) {#
+#
+			for (iregion in 1:n.fit1) {#
+				tmp = tab[[iregion]]#
+				tmp = window(tmp, start = 5e+06, end = 1e+07, ithin = 1)#
+				kcol = which(colnames(tmp) == "R0")#
+				icol = which(colnames(tmp) == "deltaR")#
+				jcol = which(colnames(tmp) == "aparam")#
+#
+				if (iregion <= n.fit) {#
+					sh.aveg = mean(sh.fit[, iregion])#
+				} else {#
+					sh.aveg = mean(sh)#
+				}#
+				# lets replace the deltaR column with (1+deltaR * exp(-a*<q(t)>))#
+				deltaR = tmp[, icol]#
+				aparam = tmp[, jcol]#
+				tmp[, icol] = (1 + deltaR * exp(-aparam * sh.aveg))#
+#
+				regName = mydata$model$name#
+				if (iregion <= n.fit) regName = mydata$fit$name#
+				densplot(tmp[, icol], ylab = "Frequency", xlab = "", main = c(regName,FY), col = colvec[imodel], show.obs = FALSE, lwd = 2, xlim = c(1, 1.3))#
+#
+				z = fitdistr(tmp[, icol], "normal")#
+				val.mean = as.numeric(z$estimate["mean"])#
+				val.sd = as.numeric(z$estimate["sd"])#
+				nopt1 = dim(tmp)[2]#
+				llk.mean = mean(tmp[, nopt1])#
+#
+				legend = rep("", 3)#
+				legend[1] = paste("Mean ", signif(val.mean, digits = 3))#
+				legend[2] = paste("SD ", signif(val.sd, digits = 3))#
+				legend[3] = paste("AICc", signif(llk.mean, digits = 3))#
+				legend("topleft", legend = legend, bty = "n")#
+				legend("topright", legend = expression((1 + Delta * e^{#
+					-a * bar(q(t))#
+				})), cex = 1.5, bty = "n")#
+			}#
+		}#
+		if (imodel == 2) { ## SV Model#
+			for (iregion in 1:n.fit1) {#
+				tmp = tab[[iregion]]#
+				tmp = window(tmp, start = 5e+06, end = 1e+07, ithin = 1)#
+#
+				kcol = which(colnames(tmp) == "R0")#
+				icol = which(colnames(tmp) == "alpha")#
+#
+				regName = mydata$model$name#
+				if (iregion <= n.fit) regName = mydata$fit$name#
+#
+				densplot(tmp[, icol], ylab = "Frequency", xlab = "", main = c(regName,FY), show.obs = FALSE, lwd = 2, col = colvec[imodel], xlim = c(0, 1))#
+#
+				z = fitdistr(tmp[, icol], "normal")#
+				val.mean = as.numeric(z$estimate["mean"])#
+				val.sd = as.numeric(z$estimate["sd"])#
+				nlines = dim(tmp)[1]#
+				nlines2 = nlines/2#
+				nopt1 = dim(tmp)[2]#
+				llk.mean = mean(tmp[nlines2:nlines, nopt1])#
+				legend = rep("", 3)#
+				legend[1] = paste("Mean ", signif(val.mean, digits = 3))#
+				legend[2] = paste("SD ", signif(val.sd, digits = 3))#
+				legend[3] = paste("AICc", signif(llk.mean, digits = 3))#
+				legend("topleft", legend = legend, bty = "n")#
+			}#
+#
+		}#
+	} # End of loop on years#
+#
+} # End of loop on models
+rm(list=ls())#
+#
+graphics.off()#
+#
+library(DICE)#
+#
+pdf = FALSE#
+#
+colvec = c('cadetblue2', 'coral')#
+#
+dataType = "misccases"#
+#
+NAME_2 = "USA"#
+FY.vec = c("2010-2011", "2011-2012", "2012-2013", "2013-2014")#
+#
+year.start <- seq(from=2004,to=2015,by=1) #
+year.end  <- seq(from=2005,to=2016,by=1)#
+#
+FY.vec <- paste(year.start,'-',year.end,sep='')#
+#
+nyears <- length(FY.vec)#
+#
+nweeksFit = 52#
+#
+dataType = 'cdc'#
+#
+mod_level = 2#
+fit_level = 3#
+RegState = 'usa'#
+name = c(NAME_2="USA")#
+#
+isingle = 1#
+#
+nyears = length(year.start)#
+#
+nreals <- 3#
+#
+Legend <- c("SH", "SV","SH+SV")#
+#
+models = seq(1:length(Legend))#
+nmodels = length(models)#
+#
+llk = rep(0, nreals)#
+#
+if (pdf == TRUE) {#
+	filename = 'results-sv-sh-models.pdf'#
+	pdf(file=filename,width = 13, height = 9)#
+}#
+par(mar = c(4, 4, 1.5, 1), mfrow = c(4,3))#
+##for (imodel in 1:nmodels) {#
+#
+##	for (iyear in 1:nyears) {#
+for (imodel in 1:1) {#
+#
+	for (iyear in 1:1) {#
+#
+		FY = FY.vec[iyear]#
+#
+		year = year.start[iyear]#
+		year1 = year.end[iyear]#
+#
+		# get data for this year#
+		mydata = get.subset(start.year = year, end.year = year1, name = name, mod_level = mod_level, fit_level = fit_level, dataType = dataType)#
+#
+		dataName = paste(dataType, "-", mydata$model$name, "-uncpl-", FY, "-", imodel, sep = "")#
+#
+		epi = mydata$model$epi#
+#
+		sh = mydata$model$sh#
+#
+		sv = mydata$model$school#
+#
+		epi.fit = mydata$fit$epi#
+#
+		sh.fit = mydata$fit$sh#
+#
+		sv.fit = mydata$fit$school#
+#
+		school = sv#
+#
+		school[school == 0] = NA#
+#
+		school.fit = sv.fit#
+#
+		school.fit[school.fit == 0] = NA#
+#
+		n.fit = mydata$fit$nregions#
+#
+		n.fit1 = n.fit + 1#
+#
+		weeks = mydata$weeks#
+#
+		llk = array(0, c(n.fit1, nreals))#
+		nweeks = mydata$nweeks#
+#
+		# Load the profiles of the run #
+		tab = list()#
+		subDir = "results"#
+		for (ireal in 1:nreals) {#
+			filename = paste(subDir, "/mcmc-", dataName, "-", nweeksFit, "-", ireal, ".RData", sep = "")#
+			print(filename)#
+			load(filename)#
+#
+			for (iregion in 1:n.fit1) {#
+				tmp = results.list[[iregion]]#
+#
+				nlines = dim(tmp)[1]#
+				ncol = dim(tmp)[2]#
+				nlines2 = nlines/2#
+				llk[iregion, ireal] = mean(tmp[nlines2:nlines, ncol])#
+#
+			}#
+		}#
+#
+		print(llk)#
+		# choose the best realization for each region#
+		imin = rep(0, n.fit1)#
+#
+		for (iregion in 1:n.fit1) {#
+			imin[iregion] = which.min(llk[iregion, ])#
+		}#
+#
+		for (iregion in 1:n.fit1) {#
+#
+			filename = paste(subDir, "/mcmc-", dataName, "-", nweeksFit, "-", imin[iregion], ".RData", sep = "")#
+			load(filename)#
+			tab[[iregion]] = results.list[[iregion]]#
+#
+		}#
+#
+		## SH model#
+		if (imodel == 1) {#
+#
+			for (iregion in 1:n.fit1) {#
+				tmp = tab[[iregion]]#
+				tmp = window(tmp, start = 5e+06, end = 1e+07, ithin = 1)#
+				kcol = which(colnames(tmp) == "R0")#
+				icol = which(colnames(tmp) == "deltaR")#
+				jcol = which(colnames(tmp) == "aparam")#
+#
+				if (iregion <= n.fit) {#
+					sh.aveg = mean(sh.fit[, iregion])#
+				} else {#
+					sh.aveg = mean(sh)#
+				}#
+				# lets replace the deltaR column with (1+deltaR * exp(-a*<q(t)>))#
+				deltaR = tmp[, icol]#
+				aparam = tmp[, jcol]#
+				tmp[, icol] = (1 + deltaR * exp(-aparam * sh.aveg))#
+#
+				regName = mydata$model$name#
+				if (iregion <= n.fit) regName = mydata$fit$name#
+				densplot(tmp[, icol], ylab = "Frequency", xlab = "", main = c(regName,FY), col = colvec[imodel], show.obs = FALSE, lwd = 2, xlim = c(1, 1.3))#
+#
+				z = fitdistr(tmp[, icol], "normal")#
+				val.mean = as.numeric(z$estimate["mean"])#
+				val.sd = as.numeric(z$estimate["sd"])#
+				nopt1 = dim(tmp)[2]#
+				llk.mean = mean(tmp[, nopt1])#
+#
+				legend = rep("", 3)#
+				legend[1] = paste("Mean ", signif(val.mean, digits = 3))#
+				legend[2] = paste("SD ", signif(val.sd, digits = 3))#
+				legend[3] = paste("AICc", signif(llk.mean, digits = 3))#
+				legend("topleft", legend = legend, bty = "n")#
+				legend("topright", legend = expression((1 + Delta * e^{#
+					-a * bar(q(t))#
+				})), cex = 1.5, bty = "n")#
+			}#
+		}#
+		if (imodel == 2) { ## SV Model#
+			for (iregion in 1:n.fit1) {#
+				tmp = tab[[iregion]]#
+				tmp = window(tmp, start = 5e+06, end = 1e+07, ithin = 1)#
+#
+				kcol = which(colnames(tmp) == "R0")#
+				icol = which(colnames(tmp) == "alpha")#
+#
+				regName = mydata$model$name#
+				if (iregion <= n.fit) regName = mydata$fit$name#
+#
+				densplot(tmp[, icol], ylab = "Frequency", xlab = "", main = c(regName,FY), show.obs = FALSE, lwd = 2, col = colvec[imodel], xlim = c(0, 1))#
+#
+				z = fitdistr(tmp[, icol], "normal")#
+				val.mean = as.numeric(z$estimate["mean"])#
+				val.sd = as.numeric(z$estimate["sd"])#
+				nlines = dim(tmp)[1]#
+				nlines2 = nlines/2#
+				nopt1 = dim(tmp)[2]#
+				llk.mean = mean(tmp[nlines2:nlines, nopt1])#
+				legend = rep("", 3)#
+				legend[1] = paste("Mean ", signif(val.mean, digits = 3))#
+				legend[2] = paste("SD ", signif(val.sd, digits = 3))#
+				legend[3] = paste("AICc", signif(llk.mean, digits = 3))#
+				legend("topleft", legend = legend, bty = "n")#
+			}#
+#
+		}#
+	} # End of loop on years#
+#
+} # End of loop on models
+source('analysis-sv-sh.R')
+source('analysis-sv-sh.R')
+source('analysis-sv-sh.R')
+help(grid.newpage)
+source('analysis-sv-sh.R')
+help(grid.newpage)
+source('analysis-sv-sh.R')
+source('analysis-sv-sh.R')
+source('analysis-sv-sh.R')
+source('analysis-sv-sh.R')
+source('analysis-sv-sh.R')
+stats
+colnames(tmp)
+source('analysis-sv-sh.R')
+source('analysis-sv-sh.R')
+length(c("FY","Region","Model","R0-mean","R0-SD","pC-Mean","pC-SD","SH-Mean","SH-SD","SV-Mean","SV-SD"))
+kcol
+colnames(tmp)
+icount
+z = fitdistr(tmp[, kcol], "normal")
+z
+stats[icount,'R0-Mean']  = as.numeric(z$estimate["mean"])
+as.numeric(z$estimate["mean"])
+val.mean
+val.sd
+icount
+head(stats)
+stats[icount,'R0-Mean']  = z$estimate["mean"]
+stats[icount,'R0-Mean']  = val.mean
+is.numeric(val.mean)
+val.mean
+source('analysis-sv-sh.R')
+stats
+source('analysis-sv-sh.R')
+stats
+head(stats)
+stats[,stats[,"Model"]== 1]
+stats[stats[,"Model"]== 1,]
+stats[stats[,"Model"]== 2,]
+icount
+icount/11
+6=264/11
+264/11
+source('analysis-sv-sh.R')
+stats
+icount
+396/11
+stats[stats[,'Model']== 3,]
+source('analysis-sv-sh.R')
+icount
+tail(stats)
+stats[stats[,'Model']== 3,]
+stats[stats[,'Model']== 3,]
+source('analysis-sv-sh.R')
+regionflu <- get_flu_data('HHS',sub_region=1:10,'ilinet',years=2003:2017)
+regionflu
+tail(regionflu)
+help(get_flu_data)
+natlflu  <- get_flu_data(region='national','ilinet',years=2003:2017)
+natlflu
+names(regionflu)
+year.end = regionflu$YEAR[nlines]
+year.end
+nlines
+dim(regionflu)
+year.start <- seq(from=2004,to=2016,by=1) #
+year.end  <- seq(from=2005,to=2017,by=1)#
+nyears = length(year.start)#
+#
+	for (iyear in 1:nyears) {#
+	year = year.start[iyear]#
+	year1 = year.end[iyear]#
+#
+	mydata = get.subset(start.year = year, end.year = year1, name = name, mod_level = mod_level, fit_level = fit_level, dataType = dataType)#
+#
+}
+mydata
+# read in the data files#
+rm(list=ls())#
+graphics.off()#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "Temp"  #Bn, vr, Temp, np#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+#setwd("~Dropbox/projectZed/R/") # this is for whatever just got run#
+#setwd("~Dropbox/projectZed/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+#setwd("~/Dropbox/projectZed/R/corr-coh-Bn-6hr/") # for Bn 24hr window#
+##setwd("~/Dropbox/projectZed/michal/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+## setwd("~/Dropbox/projectZed/michal/R/corr-coh-vr-24hr/")  # for vr 24hr window#
+## setwd("~/Dropbox/projectZed/michal/R/corr-coh-Temp-24hr/") #
+#
+setwd("~/Dropbox/projectZed/michal/R/corr-coh-Temp-24hr/") #
+#
+file_list <- list.files(pattern=".csv")#
+#
+##setwd("~/Dropbox/projectZed/R/corr-coh-vr-6hr/") #
+##setwd("~/Dropbox/projectZed/R/corr-coh-vr-24hr/") #
+#file_list <- list.files(pattern="corr-coh-vr-w24")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}#
+# Need to remove all lines with -999.0#
+#
+if (whvar == 'vr' || whvar == 'np' || whvar == 'Temp') {#
+rmv = -999.0#
+dataset <- dataset[!(dataset[,4] %in% rmv),]	#
+}#
+if(whvar == 'Temp' || whvar == 'np') {#
+	dataset = na.omit(dataset)#
+}
+range(dataset[,4])
+range(dataset[,5])
+range(dataset[,6])
+range(dataset[,7])
+range(dataset[,8])
+dim(dataset)
+# create a 5x5 scatterplot#
+plot(dataset[,c(4,5,6,7,8)])
+pdf(file='../manuscript-Figures/figure3-Temp-24hr.pdf')#
+plot(dataset[,c(4,5,6,7,8)])#
+dev.off()#
+# High Density Scatterplot with Binning#
+x <- dataset$coh#
+y <- dataset$corrPred#
+mtit <- "Hexagonal Binning: Coherency v. Predicted Correlation"#
+xtit <- "Coherency"#
+ytit <- "Predicted Correlation"#
+bin<-hexbin(x, y, xbins=50) #
+plot(bin, main=mtit,xlab=xtit,ylab=ytit)
+pdf(file='../manuscript-Figures/figure6-Temp-24hr.pdf')#
+plot(bin,xlab=xtit,ylab=ytit,main=mtit)#
+dev.off()#
+#
+# High Density Scatterplot with Binning#
+#
+x <- dataset$mse#
+y <- dataset$mseZero#
+mtit <- "Hexagonal Binning: MSE v. MSE-Zero"#
+xtit <- "MSE"#
+ytit <- "MSE-Zero"#
+x1 <- c(0,20)#
+y1 <- x1#
+xmax = 10 # for Bn #
+if (whvar == "Bn") {#
+	xmax = 10#
+}#
+#
+if (whvar == 'vr') {#
+	xmax = 1e4 #2000#
+}#
+#
+if (whvar == 'Temp') {#
+	xmax = 1e5 #1e5 for zoomed version#
+}#
+#
+if (whvar == 'np') {#
+	xmax = 20#
+}#
+xsub = ((x <= xmax) & (y <= xmax))#
+bin<-hexbin(x[xsub], y[xsub], xbins=50,xbnds=c(0,xmax), ybnds=c(0,xmax)) #
+#
+# nice colour version#
+#
+rf <- colorRampPalette(rev(brewer.pal(11,'Spectral')))#
+plot(bin, main=mtit,xlab=xtit,ylab=ytit,colramp=rf)
+xmax
+x
+y
+range(x)
+range(y)
+xmax = 10 # for Bn #
+if (whvar == "Bn") {#
+	xmax = 10#
+}#
+#
+if (whvar == 'vr') {#
+	xmax = 1e4 #2000#
+}#
+#
+if (whvar == 'Temp') {#
+	xmax = 1e12 #1e5 for zoomed version#
+}#
+#
+if (whvar == 'np') {#
+	xmax = 20#
+}#
+xsub = ((x <= xmax) & (y <= xmax))#
+bin<-hexbin(x[xsub], y[xsub], xbins=50,xbnds=c(0,xmax), ybnds=c(0,xmax)) #
+#
+# nice colour version#
+#
+rf <- colorRampPalette(rev(brewer.pal(11,'Spectral')))#
+plot(bin, main=mtit,xlab=xtit,ylab=ytit,colramp=rf)
+xmax = 10 # for Bn #
+if (whvar == "Bn") {#
+	xmax = 10#
+}#
+#
+if (whvar == 'vr') {#
+	xmax = 1e4 #2000#
+}#
+#
+if (whvar == 'Temp') {#
+	xmax = 1e10 #1e5 for zoomed version#
+}#
+#
+if (whvar == 'np') {#
+	xmax = 20#
+}#
+xsub = ((x <= xmax) & (y <= xmax))#
+bin<-hexbin(x[xsub], y[xsub], xbins=50,xbnds=c(0,xmax), ybnds=c(0,xmax)) #
+#
+# nice colour version#
+#
+rf <- colorRampPalette(rev(brewer.pal(11,'Spectral')))#
+plot(bin, main=mtit,xlab=xtit,ylab=ytit,colramp=rf)
+pdf(file='../manuscript-Figures/figure4-Temp-24hr.pdf')#
+plot(bin, main=mtit,xlab=xtit,ylab=ytit,colramp=rf)#
+dev.off()#
+#
+colCoh = dataset$coh / max(dataset$coh)#
+#
+# plots points with red line slope=1#
+plot(x,y,pch=16,xlim=c(0,xmax),ylim=c(0,xmax),xlab=xtit,ylab=ytit,col = gray(colCoh))#
+abline(0,1,col="red")
+ratioMSE = x/y#
+xr1 = c(0,2.)#
+nbreak = 500#
+#
+if (whvar == "Bn") {#
+	nbreak = 500#
+}#
+#
+if (whvar == 'vr' || whvar == 'Temp') {#
+	nbreak = 2000#
+}#
+if (whvar == 'np') {#
+	xr1 = c(0,2)#
+	nbreak=5000#
+}#
+#
+hist(ratioMSE,breaks=nbreak,xlab="MSE / MSE-Zero",xlim=xr1,main="Ratio of MSE to MSE-Zero")
+ratioMSE = x/y#
+xr1 = c(0,2.)#
+nbreak = 500#
+#
+if (whvar == "Bn") {#
+	nbreak = 500#
+}#
+#
+if (whvar == 'vr' || whvar == 'Temp') {#
+	nbreak = 500#
+}#
+if (whvar == 'np') {#
+	xr1 = c(0,2)#
+	nbreak=5000#
+}#
+#
+hist(ratioMSE,breaks=nbreak,xlab="MSE / MSE-Zero",xlim=xr1,main="Ratio of MSE to MSE-Zero")
+pdf(file='../manuscript-Figures/figure9-Temp-24hr.pdf')#
+hist(ratioMSE,breaks=nbreak,xlab="MSE / MSE-Zero",xlim=xr1,main="Ratio of MSE to MSE-Zero")#
+dev.off()
+rm(list=ls())#
+#
+graphics.off()#
+#
+library(DICE)#
+#
+fit_level = 2#
+mod_level = 3#
+dataType = 'cdc'#
+#
+year.start <- seq(from=2004,to=2016,by=1) #
+year.end  <- seq(from=2005,to=2017,by=1)#
+nyears = length(year.start)
+my.year = 2016
+my.year1 = my.year+1
+my.year = 2016#
+my.year1 = my.year+1#
+#
+mydata = get.subset(start.year = my.year, end.year = my.year1, mod_level = mod_level, fit_level = fit_level, dataType = dataType)
+fit_level
+mod_level

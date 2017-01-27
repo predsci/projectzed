@@ -1,0 +1,3043 @@
+vmax/dvDropx
+vmax/dvDrop
+legendOn = T#
+dvDrop = 2.5#
+#
+legend(xmin,vmax,lty=replicate(length(models[imodels])+1,1),c(sc,smodels[imodels]),#
+  lwd=replicate(length(models[imodels])+1,2.5),text.col=c("black",cmodels[imodels]),#
+  col=c("black",cmodels[imodels]),cex=cex1)#
+if (legendOn == T) {#
+  legend(xmin,vmax/dvDrop,paste(smodels[imodels],":",format(corrVec[imodels],digits=4),sep=""),#
+  text.col=cmodels[imodels],cex=cex1,title.col="black",title="Corr. Coeff.")#
+  legend(xmin+(xmax-xmin)/4.,vmax/dvDrop,paste(smodels[imodels],": ",format(MSE[imodels],digits=4),sep=""),text.col=cmodels[imodels],cex=cex1,title.col="black",title="MSE (nT^2)")#
+  legend(xmin+(xmax-xmin)/2.,vmax/dvDrop,paste(smodels[imodels],": ",format(skill[imodels],digits=4),sep=""),text.col=cmodels[imodels],cex=cex1,title.col="black",title="Skill Score (%)")#
+}  #
+#
+legendOn = T#
+dvDrop = 2.5#
+#
+legend(xmin,vmax,lty=replicate(length(models[imodels])+1,1),c(sc,smodels[imodels]),#
+  lwd=replicate(length(models[imodels])+1,2.5),text.col=c("black",cmodels[imodels]),#
+  col=c("black",cmodels[imodels]),cex=cex1)#
+if (legendOn == T) {#
+  legend(xmin,vmax/dvDrop,paste(smodels[imodels],":",format(corrVec[imodels],digits=4),sep=""),#
+  text.col=cmodels[imodels],cex=cex1,title.col="black",title="Corr. Coeff.")#
+  legend(xmin+(xmax-xmin)/4.,vmax/dvDrop,paste(smodels[imodels],": ",format(MSE[imodels],digits=4),sep=""),text.col=cmodels[imodels],cex=cex1,title.col="black",title="MSE (nT^2)")#
+  legend(xmin+(xmax-xmin)/2.,vmax/dvDrop,paste(smodels[imodels],": ",format(skill[imodels],digits=4),sep=""),text.col=cmodels[imodels],cex=cex1,title.col="black",title="Skill Score (%)")#
+}
+vmax/dvDrop
+legendOn = T#
+dvDrop = 1.5#
+#
+legend(xmin,vmax,lty=replicate(length(models[imodels])+1,1),c(sc,smodels[imodels]),#
+  lwd=replicate(length(models[imodels])+1,2.5),text.col=c("black",cmodels[imodels]),#
+  col=c("black",cmodels[imodels]),cex=cex1)#
+if (legendOn == T) {#
+  legend(xmin,vmax/dvDrop,paste(smodels[imodels],":",format(corrVec[imodels],digits=4),sep=""),#
+  text.col=cmodels[imodels],cex=cex1,title.col="black",title="Corr. Coeff.")#
+  legend(xmin+(xmax-xmin)/4.,vmax/dvDrop,paste(smodels[imodels],": ",format(MSE[imodels],digits=4),sep=""),text.col=cmodels[imodels],cex=cex1,title.col="black",title="MSE (nT^2)")#
+  legend(xmin+(xmax-xmin)/2.,vmax/dvDrop,paste(smodels[imodels],": ",format(skill[imodels],digits=4),sep=""),text.col=cmodels[imodels],cex=cex1,title.col="black",title="Skill Score (%)")#
+}
+legendOn = T#
+dvDrop = 1.5#
+#
+  legend(xmin,vmax,lty=replicate(length(models[imodels])+1,1),c(sc,smodels[imodels]),#
+  lwd=replicate(length(models[imodels])+1,2.5),text.col=c("black",cmodels[imodels]),#
+  col=c("black",cmodels[imodels]),cex=cex1)#
+if (legendOn == T) {#
+  legend(xmin,vmax/dvDrop,paste(smodels[imodels],":",format(corrVec[imodels],digits=4),sep=""),#
+  text.col=cmodels[imodels],cex=cex1,title.col="black",title="Corr. Coeff.")#
+  legend(xmin+(xmax-xmin)/3.,vmax/dvDrop,paste(smodels[imodels],": ",format(MSE[imodels],digits=4),sep=""),text.col=cmodels[imodels],cex=cex1,title.col="black",title="MSE (km/sec^2)")#
+  legend(xmin+(xmax-xmin)*2/3.,vmax/dvDrop,paste(smodels[imodels],": ",format(skill[imodels],digits=4),sep=""),text.col=cmodels[imodels],cex=cex1,title.col="black",title="Skill Score (%)")#
+}
+rm(list=ls())#
+#
+graphics.off()#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+#
+# projectZed.R#
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+#
+# DRIVER ROUTINE#
+#
+library(date)#
+#library(data.table)#
+library(hydroGOF)  #
+library(Hmisc)#
+library(pander)#
+library(caTools) # load necessary libraries#
+library(zoo)#
+library(binhf)#
+#
+source("~/Dropbox/ProjectZed/michal/R/libPRojectZed.R")#
+#
+readDataFlag = T#
+#
+# choose which data to read: #
+#
+sDataSet = "OMNI" # "ACE" # "OMNI"#
+plotB    = 'no'#
+plotV    = 'yes'#
+#
+plotRealizations = 'yes'#
+plotQuantiles = 'yes'#
+#
+# Create a window if program run for the first time#
+#if (exists("createdWindow") == F) {#
+#	dev.new(width=8, height=7)#
+#	createdWindow == T#
+#}#
+#
+# set default parameters / turn on various models#
+      zero       = T # 1#
+      psychic    = F # 2#
+      persistence= F # 3#
+      recurrence = F # 4#
+      pattrec    = T # 5#
+      cme1       = F # 6#
+      turbulence = F # 7#
+      mcmc       = F # 8#
+      ucsd       = F # 9#
+      savani     = F # 10#
+      models = c(zero,psychic,persistence, recurrence,pattrec,cme1,turbulence,mcmc,ucsd,savani)#
+      smodels= c("Zero","Psychic","Persistence","Recurrence",#
+      			 "Patt. Rec.","CME1","Turbulence","MCMC","UCSD","Savani") #
+#
+# Choose good intervals for highlighting a particular model: #
+# 6: The bastille day event#
+# 5: Good example for Pattern recognition#
+# 8: MCMC cloud event#
+# 10: Savani Jan 8, 2014 event#
+# 9/99: Bernie's ambient field intervals - CR 2055/2056#
+# 4: the 3-30-2011 event #
+# 3: the 6-17-2012 event#
+#
+event = 4#
+#
+nsmooth = 0 #
+bmax    = 2#
+#
+if (event == 1) { #
+   ymd     = "2007-03-30" # Bernie's ambient field intervals - CR 2055#
+   hhour   = 0#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 48#
+   bmax    = 5#
+}#
+#
+if (event == 3) { # Upper panel of Figure 2#
+#
+   ymd     = "2011-03-30" #
+   hhour   = 12#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 24#
+   bmax    = 30#
+}#
+#
+if (event == 4) { # Lower panel of Figure 2#
+#
+   ymd     = "2012-06-17" #
+   hhour   = 8 #
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 24#
+   bmax    = 30#
+}#
+if (event == 5) { # Here's a good example for Pattern recognition#
+#
+   ymd     = "2000-09-18" # this corresponds with the 262 event from proposal#
+   hhour   = 4#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 24#
+   bmax    = 20#
+}#
+#
+if (event == 6) {#
+      ymd = '2000-07-14' # The bastille day event#
+      hhour= 12#
+      mmin = 0#
+      ssec = 0#
+      wwindow = 72#
+      bmax = 50#
+}#
+#
+if (event == 7) { #
+   ymd     = "2007-03-30" # turbulence test#
+   hhour   = 0#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 36#
+   bmax    = 5#
+}#
+#
+if (event == 8) {#
+   ymd     = "2002-04-18" # Flux rope with nice rotation in Bz#
+   hhour   = 11#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 22#
+   bmax    = 20#
+}#
+if (event == 9) { #
+   ymd     = "2007-03-30" # Bernie's ambient field intervals - CR 2055#
+   hhour   = 0#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 27*24#
+   nsmooth = 8 # need to smooth the data to better compare with model results#
+   bmax    = 2#
+}#
+#
+if (event == 99) {#
+   ymd     = "2007-04-26" # Bernie's ambient field intervals - CR 2056#
+   hhour   = 0#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 27*24#
+   nsmooth = 24 # need to smooth the data to better compare with model results#
+   bmax    = 2#
+}#
+if (event == 10) {#
+#
+   ymd     = "2014-01-08" # Savani event 1#
+   hhour   = 12#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 40#
+   bmax    = 10#
+}#
+# convert the date and time to POSIX value XXX#
+      date1 = ISOdate(ymd,hhour,mmin,ssec,tz="UTC")#
+if (readDataFlag == T) {#
+#
+if (sDataSet == "OMNI") {#
+        readData = readMagV_OMNI() # read in the data#
+        ddate = readData$ddate#
+        Bn=readData$Bn#
+        vr = readData$vr#
+        np = readData$np#
+        Temp = readData$Temp#
+}#
+#
+if (sDataSet == "ACE") {#
+        readData = readMagV_ACE() # read in the data#
+        ddate = readData$ddate#
+        Bn=readData$Bn#
+        vr = readData$vr#
+}#
+#
+}#
+ # Change outliers to NA's#
+      Bn[Bn==999.9] = NA#
+      vr[vr==9999]  = NA#
+      np[np==999.9] = NA#
+      Temp[Temp==9999999] = NA#
+ # plot the Bn model results#
+#  par(mfrow = c(2, 1)) # this is if you want B and V on same page#
+#
+if (plotB == 'yes') {      #
+plotDataBn = plotMag(ddate,Bn,date1=date1,wwindow=wwindow,models=models,smodels=smodels,#
+		nsmooth=nsmooth,bmax=bmax,sc= sDataSet, plotRealizations= plotRealizations, #
+		plotQuantiles= plotQuantiles)#
+}      #
+    #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+      # plot the vr model results#
+if (plotV == 'yes') {  #
+   dev.new()   #
+   plotDatavr = plotV(ddate,vr,date1=date1,wwindow=wwindow,models=models,smodels=smodels,#
+   nsmooth=nsmooth,sc=sDataSet,plotRealizations= plotRealizations, #
+		plotQuantiles= plotQuantiles)#
+}      #
+#      par(mfrow = c(1, 1)) # only if plotting to the same window#
+    #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+rm(list=ls())#
+#
+graphics.off()#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+#
+# projectZed.R#
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+#
+# DRIVER ROUTINE#
+#
+library(date)#
+#library(data.table)#
+library(hydroGOF)  #
+library(Hmisc)#
+library(pander)#
+library(caTools) # load necessary libraries#
+library(zoo)#
+library(binhf)#
+#
+source("~/Dropbox/ProjectZed/michal/R/libPRojectZed.R")
+ls()
+plotMag
+plotV
+rm(list=ls())#
+#
+graphics.off()#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+#
+# projectZed.R#
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+#
+# DRIVER ROUTINE#
+#
+library(date)#
+#library(data.table)#
+library(hydroGOF)  #
+library(Hmisc)#
+library(pander)#
+library(caTools) # load necessary libraries#
+library(zoo)#
+library(binhf)#
+#
+source("~/Dropbox/ProjectZed/michal/R/libPRojectZed.R")#
+#
+readDataFlag = T#
+#
+# choose which data to read: #
+#
+sDataSet = "OMNI" # "ACE" # "OMNI"#
+plotB    = 'no'#
+plotV    = 'yes'#
+#
+plotRealizations = 'yes'#
+plotQuantiles = 'yes'#
+#
+# Create a window if program run for the first time#
+#if (exists("createdWindow") == F) {#
+#	dev.new(width=8, height=7)#
+#	createdWindow == T#
+#}#
+#
+# set default parameters / turn on various models#
+      zero       = T # 1#
+      psychic    = F # 2#
+      persistence= F # 3#
+      recurrence = F # 4#
+      pattrec    = T # 5#
+      cme1       = F # 6#
+      turbulence = F # 7#
+      mcmc       = F # 8#
+      ucsd       = F # 9#
+      savani     = F # 10#
+      models = c(zero,psychic,persistence, recurrence,pattrec,cme1,turbulence,mcmc,ucsd,savani)#
+      smodels= c("Zero","Psychic","Persistence","Recurrence",#
+      			 "Patt. Rec.","CME1","Turbulence","MCMC","UCSD","Savani") #
+#
+# Choose good intervals for highlighting a particular model: #
+# 6: The bastille day event#
+# 5: Good example for Pattern recognition#
+# 8: MCMC cloud event#
+# 10: Savani Jan 8, 2014 event#
+# 9/99: Bernie's ambient field intervals - CR 2055/2056#
+# 4: the 3-30-2011 event #
+# 3: the 6-17-2012 event#
+#
+event = 4#
+#
+nsmooth = 0 #
+bmax    = 2#
+#
+if (event == 1) { #
+   ymd     = "2007-03-30" # Bernie's ambient field intervals - CR 2055#
+   hhour   = 0#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 48#
+   bmax    = 5#
+}#
+#
+if (event == 3) { # Upper panel of Figure 2#
+#
+   ymd     = "2011-03-30" #
+   hhour   = 12#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 24#
+   bmax    = 30#
+}#
+#
+if (event == 4) { # Lower panel of Figure 2#
+#
+   ymd     = "2012-06-17" #
+   hhour   = 8 #
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 24#
+   bmax    = 30#
+}#
+if (event == 5) { # Here's a good example for Pattern recognition#
+#
+   ymd     = "2000-09-18" # this corresponds with the 262 event from proposal#
+   hhour   = 4#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 24#
+   bmax    = 20#
+}#
+#
+if (event == 6) {#
+      ymd = '2000-07-14' # The bastille day event#
+      hhour= 12#
+      mmin = 0#
+      ssec = 0#
+      wwindow = 72#
+      bmax = 50#
+}#
+#
+if (event == 7) { #
+   ymd     = "2007-03-30" # turbulence test#
+   hhour   = 0#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 36#
+   bmax    = 5#
+}#
+#
+if (event == 8) {#
+   ymd     = "2002-04-18" # Flux rope with nice rotation in Bz#
+   hhour   = 11#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 22#
+   bmax    = 20#
+}#
+if (event == 9) { #
+   ymd     = "2007-03-30" # Bernie's ambient field intervals - CR 2055#
+   hhour   = 0#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 27*24#
+   nsmooth = 8 # need to smooth the data to better compare with model results#
+   bmax    = 2#
+}#
+#
+if (event == 99) {#
+   ymd     = "2007-04-26" # Bernie's ambient field intervals - CR 2056#
+   hhour   = 0#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 27*24#
+   nsmooth = 24 # need to smooth the data to better compare with model results#
+   bmax    = 2#
+}#
+if (event == 10) {#
+#
+   ymd     = "2014-01-08" # Savani event 1#
+   hhour   = 12#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 40#
+   bmax    = 10#
+}#
+# convert the date and time to POSIX value XXX#
+      date1 = ISOdate(ymd,hhour,mmin,ssec,tz="UTC")#
+if (readDataFlag == T) {#
+#
+if (sDataSet == "OMNI") {#
+        readData = readMagV_OMNI() # read in the data#
+        ddate = readData$ddate#
+        Bn=readData$Bn#
+        vr = readData$vr#
+        np = readData$np#
+        Temp = readData$Temp#
+}#
+#
+if (sDataSet == "ACE") {#
+        readData = readMagV_ACE() # read in the data#
+        ddate = readData$ddate#
+        Bn=readData$Bn#
+        vr = readData$vr#
+}#
+#
+}#
+ # Change outliers to NA's#
+      Bn[Bn==999.9] = NA#
+      vr[vr==9999]  = NA#
+      np[np==999.9] = NA#
+      Temp[Temp==9999999] = NA#
+ # plot the Bn model results#
+#  par(mfrow = c(2, 1)) # this is if you want B and V on same page#
+#
+if (plotB == 'yes') {      #
+plotDataBn = plotMag(ddate,Bn,date1=date1,wwindow=wwindow,models=models,smodels=smodels,#
+		nsmooth=nsmooth,bmax=bmax,sc= sDataSet, plotRealizations= plotRealizations, #
+		plotQuantiles= plotQuantiles)#
+}      #
+    #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+      # plot the vr model results#
+if (plotV == 'yes') {  #
+   dev.new()   #
+   plotDatavr = plotVr(ddate,vr,date1=date1,wwindow=wwindow,models=models,smodels=smodels,#
+   nsmooth=nsmooth,sc=sDataSet,plotRealizations= plotRealizations, #
+		plotQuantiles= plotQuantiles)#
+}      #
+#      par(mfrow = c(1, 1)) # only if plotting to the same window#
+    #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+models
+vr
+vrNow
+isub
+sc=sDataSet
+err = 0 # set the error flag to zero#
+  # Plot the data#
+  vmin = 300 # set up some default plotting parameters#
+  vmax = 700#
+  symSize = 0.25#
+  cex1    = 1.0#
+  mlwd=2#
+  xmin = date1 - wwindow*3600.#
+  xmax = date1 + wwindow*3600.#
+  vrNow = vr[ddate==date1]#
+  nshift = round(24*27.2753)#
+  vrRecurrence = shift(vr,nshift)#
+  vrZero = 0.0*vr + 500.#
+  vrPsychic = vr*0.0 + runif(1,vmin,vmax)#
+  vrPersistence = vr*0.0+vrNow#
+  ipred = ((ddate >= date1) & (ddate <= xmax))#
+  isub  = ((ddate >=xmin) & (ddate <= xmax))#
+  imodels = (models == T) #
+  vmin  = min(vr[isub],na.rm=T)#
+  vmax  = max(vr[isub],na.rm=T)#
+  #plot(ddate,Bn,xlim=c(xmin,xmax))#
+  plot(ddate[isub],vr[isub],ylim=c(vmin,vmax),#
+       xlab="Time (Date)",ylab="vr (km/s)",cex=symSize,#
+       xlim=c(xmin,xmax),type="l",xaxt="n")#
+  axis.POSIXct(1, at = seq(xmin,xmax, by = "day"), format = "%m/%d/%y")#
+  #axis.POSIXct(3, at = seq(xmin,xmax, by = "hour"), format = "%H")#
+  #box()#
+  lines(c(date1,date1),c(vmin,vmax),type="l",col="red",lwd=3)#
+  lines(c(min(ddate)-2,max(ddate)+2),c(0,0),type="l")#
+  # add in some model predictions:#
+  # add in some model predictions:#
+  # Here's the order: psychic,zero,persistence, recurrence,pattrec,cme1,turbulence,mcmc#
+  nipred  = length(vr[ipred])#
+  cmodels = c("red","blue","green","brown","purple","blue1","magenta","green4","navy","blue4")#
+  corrVec = 0.0*vector("numeric",length(models))#
+  probFor = 0.0*vector("numeric",length(models))#
+  MSE     = 0.0*vector("numeric",length(models))
+isub
+ipred
+if (models[1] == T) {#
+    lines(ddate[ipred],vrZero[ipred],type="l",col=cmodels[1])#
+    corrVec[1] = cor(vr[ipred],vrZero[ipred],method="pearson",use="complete")#
+    MSE[1] = mse(vrZero[ipred], vr[ipred], na.rm=T)#
+  }
+smodels
+if (models[5] == T) {#
+	arrPattRec = pattRec(ddate,Bn=vr,date1=date1,wwindow=wwindow,bmax=bmax,plotRealizations=plotRealizations)#
+    meanVrPred = arrPattRec$meanBnPred#
+    VrRealizations = arrPattRec$BnRealizations#
+    nrow = dim(VrRealizations)[1]#
+    ncol = dim(VrRealizations)[2]#
+    probForAll = vector("numeric",ncol)#
+    nrow = dim(VrRealizations)[1]#
+    ncol = dim(VrRealizations)[2]#
+    for (i in 1:(ncol)) {#
+        if (plotRealizations == 'yes') {lines(ddate[ipred],VrRealizations[,i],type="l",col="grey")}	#
+       # if (min(VrRealizations[,i]) < 200.0) {probForAll[i] = 100.}      	#
+    }#
+    # compute quantiles#
+    quantArr = matrix(0,5,nrow)#
+    for (i in 1:(nrow)) {#
+        quantOne = quantile(VrRealizations[i,])#
+        quantArr[,i] = quantOne#
+    }    #
+    #lines(ddateCME1,quantArr[2,],type="l",col="green3",lwd=2)#
+    #lines(ddateCME1,quantArr[4,],type="l",col="green3",lwd=2)#
+    ypoly = c(quantArr[2,],rev(quantArr[4,]))#
+    xpoly = c(ddate[ipred],rev(ddate[ipred]))#
+    if (plotQuantiles=="yes") {polygon(xpoly,ypoly,col=rgb(0, 1, 0,0.3),border=NA)}#
+    points(ddate[ipred],meanVrPred,col=cmodels[5],lwd=mlwd,type="l")#
+    if (plotQuantiles=="yes") {text(xmax-(xmax-xmin)/8.,vmin,"25/75% Quantiles",cex=cex1,col="green3")}#
+    corrVec[5] = cor(vr[ipred], meanVrPred,method="pearson",use="complete")#
+    #probFor[5] = sum(probForAll)/ncol#
+    MSE[5] = mse(meanVrPred, vr[ipred], na.rm=T)#
+#
+}
+date1
+ntot=length(vr)
+n1 = min((1:ntot)[ddate==date1])
+window
+wwindow
+n1
+dn      = wwindow/2
+x1   = vr[(n1-2*dn):n1]
+x2
+x1
+length*x1
+length(x1)
+if (models[1] == T) {#
+	ntot    = length(vr)#
+	n1 = min((1:ntot)[ddate==date1])#
+	x1   = vr[(n1-2*dn):n1]#
+	vrZero = 0.0*vr + mean(x1)#
+    lines(ddate[ipred],vrZero[ipred],type="l",col=cmodels[1])#
+    corrVec[1] = cor(vr[ipred],vrZero[ipred],method="pearson",use="complete")#
+    MSE[1] = mse(vrZero[ipred], vr[ipred], na.rm=T)#
+  }
+vrZero
+if (models[5] == T) {#
+	arrPattRec = pattRec(ddate,Bn=vr,date1=date1,wwindow=wwindow,bmax=bmax,plotRealizations=plotRealizations)#
+    meanVrPred = arrPattRec$meanBnPred#
+    VrRealizations = arrPattRec$BnRealizations#
+    nrow = dim(VrRealizations)[1]#
+    ncol = dim(VrRealizations)[2]#
+    probForAll = vector("numeric",ncol)#
+    nrow = dim(VrRealizations)[1]#
+    ncol = dim(VrRealizations)[2]#
+    for (i in 1:(ncol)) {#
+        if (plotRealizations == 'yes') {lines(ddate[ipred],VrRealizations[,i],type="l",col="grey")}	#
+       # if (min(VrRealizations[,i]) < 200.0) {probForAll[i] = 100.}      	#
+    }#
+    # compute quantiles#
+    quantArr = matrix(0,5,nrow)#
+    for (i in 1:(nrow)) {#
+        quantOne = quantile(VrRealizations[i,])#
+        quantArr[,i] = quantOne#
+    }    #
+    #lines(ddateCME1,quantArr[2,],type="l",col="green3",lwd=2)#
+    #lines(ddateCME1,quantArr[4,],type="l",col="green3",lwd=2)#
+    ypoly = c(quantArr[2,],rev(quantArr[4,]))#
+    xpoly = c(ddate[ipred],rev(ddate[ipred]))#
+    if (plotQuantiles=="yes") {polygon(xpoly,ypoly,col=rgb(0, 1, 0,0.3),border=NA)}#
+    points(ddate[ipred],meanVrPred,col=cmodels[5],lwd=mlwd,type="l")#
+    if (plotQuantiles=="yes") {text(xmax-(xmax-xmin)/8.,vmin,"25/75% Quantiles",cex=cex1,col="green3")}#
+    corrVec[5] = cor(vr[ipred], meanVrPred,method="pearson",use="complete")#
+    #probFor[5] = sum(probForAll)/ncol#
+    MSE[5] = mse(meanVrPred, vr[ipred], na.rm=T)#
+#
+}
+skill = (1. - MSE/MSE[1])*100.#
+  cex1 = 0.5#
+#
+  lines(ddate[isub],vr[isub],type="l")#
+  lines(c(date1,date1),c(vmin,vmax),type="l",col="red",lwd=3)#
+#
+  legendOn = T#
+  dvDrop = 1.5#
+#
+  legend(xmin,vmax,lty=replicate(length(models[imodels])+1,1),c(sc,smodels[imodels]),#
+  lwd=replicate(length(models[imodels])+1,2.5),text.col=c("black",cmodels[imodels]),#
+  col=c("black",cmodels[imodels]),cex=cex1)#
+if (legendOn == T) {#
+  legend(xmin,vmax/dvDrop,paste(smodels[imodels],":",format(corrVec[imodels],digits=4),sep=""),#
+  text.col=cmodels[imodels],cex=cex1,title.col="black",title="Corr. Coeff.")#
+  legend(xmin+(xmax-xmin)/3.,vmax/dvDrop,paste(smodels[imodels],": ",format(MSE[imodels],digits=4),sep=""),text.col=cmodels[imodels],cex=cex1,title.col="black",title="MSE (km/sec^2)")#
+  legend(xmin+(xmax-xmin)*2/3.,vmax/dvDrop,paste(smodels[imodels],": ",format(skill[imodels],digits=4),sep=""),text.col=cmodels[imodels],cex=cex1,title.col="black",title="Skill Score (%)")#
+}
+lines(ddate[ipred],vrZero[ipred],type="l",col=cmodels[1])
+rm(list=ls())#
+#
+graphics.off()#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+#
+# projectZed.R#
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+#
+# DRIVER ROUTINE#
+#
+library(date)#
+#library(data.table)#
+library(hydroGOF)  #
+library(Hmisc)#
+library(pander)#
+library(caTools) # load necessary libraries#
+library(zoo)#
+library(binhf)#
+#
+source("~/Dropbox/ProjectZed/michal/R/libPRojectZed.R")#
+#
+readDataFlag = T#
+#
+# choose which data to read: #
+#
+sDataSet = "OMNI" # "ACE" # "OMNI"#
+plotB    = 'no'#
+plotV    = 'yes'#
+#
+plotRealizations = 'yes'#
+plotQuantiles = 'yes'#
+#
+# Create a window if program run for the first time#
+#if (exists("createdWindow") == F) {#
+#	dev.new(width=8, height=7)#
+#	createdWindow == T#
+#}#
+#
+# set default parameters / turn on various models#
+      zero       = T # 1#
+      psychic    = F # 2#
+      persistence= F # 3#
+      recurrence = F # 4#
+      pattrec    = T # 5#
+      cme1       = F # 6#
+      turbulence = F # 7#
+      mcmc       = F # 8#
+      ucsd       = F # 9#
+      savani     = F # 10#
+      models = c(zero,psychic,persistence, recurrence,pattrec,cme1,turbulence,mcmc,ucsd,savani)#
+      smodels= c("Zero","Psychic","Persistence","Recurrence",#
+      			 "Patt. Rec.","CME1","Turbulence","MCMC","UCSD","Savani") #
+#
+# Choose good intervals for highlighting a particular model: #
+# 6: The bastille day event#
+# 5: Good example for Pattern recognition#
+# 8: MCMC cloud event#
+# 10: Savani Jan 8, 2014 event#
+# 9/99: Bernie's ambient field intervals - CR 2055/2056#
+# 4: the 3-30-2011 event #
+# 3: the 6-17-2012 event#
+#
+event = 4#
+#
+nsmooth = 0 #
+bmax    = 2#
+#
+if (event == 1) { #
+   ymd     = "2007-03-30" # Bernie's ambient field intervals - CR 2055#
+   hhour   = 0#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 48#
+   bmax    = 5#
+}#
+#
+if (event == 3) { # Upper panel of Figure 2#
+#
+   ymd     = "2011-03-30" #
+   hhour   = 12#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 24#
+   bmax    = 30#
+}#
+#
+if (event == 4) { # Lower panel of Figure 2#
+#
+   ymd     = "2012-06-17" #
+   hhour   = 8 #
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 24#
+   bmax    = 30#
+}#
+if (event == 5) { # Here's a good example for Pattern recognition#
+#
+   ymd     = "2000-09-18" # this corresponds with the 262 event from proposal#
+   hhour   = 4#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 24#
+   bmax    = 20#
+}#
+#
+if (event == 6) {#
+      ymd = '2000-07-14' # The bastille day event#
+      hhour= 12#
+      mmin = 0#
+      ssec = 0#
+      wwindow = 72#
+      bmax = 50#
+}#
+#
+if (event == 7) { #
+   ymd     = "2007-03-30" # turbulence test#
+   hhour   = 0#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 36#
+   bmax    = 5#
+}#
+#
+if (event == 8) {#
+   ymd     = "2002-04-18" # Flux rope with nice rotation in Bz#
+   hhour   = 11#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 22#
+   bmax    = 20#
+}#
+if (event == 9) { #
+   ymd     = "2007-03-30" # Bernie's ambient field intervals - CR 2055#
+   hhour   = 0#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 27*24#
+   nsmooth = 8 # need to smooth the data to better compare with model results#
+   bmax    = 2#
+}#
+#
+if (event == 99) {#
+   ymd     = "2007-04-26" # Bernie's ambient field intervals - CR 2056#
+   hhour   = 0#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 27*24#
+   nsmooth = 24 # need to smooth the data to better compare with model results#
+   bmax    = 2#
+}#
+if (event == 10) {#
+#
+   ymd     = "2014-01-08" # Savani event 1#
+   hhour   = 12#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 40#
+   bmax    = 10#
+}#
+# convert the date and time to POSIX value XXX#
+      date1 = ISOdate(ymd,hhour,mmin,ssec,tz="UTC")#
+if (readDataFlag == T) {#
+#
+if (sDataSet == "OMNI") {#
+        readData = readMagV_OMNI() # read in the data#
+        ddate = readData$ddate#
+        Bn=readData$Bn#
+        vr = readData$vr#
+        np = readData$np#
+        Temp = readData$Temp#
+}#
+#
+if (sDataSet == "ACE") {#
+        readData = readMagV_ACE() # read in the data#
+        ddate = readData$ddate#
+        Bn=readData$Bn#
+        vr = readData$vr#
+}#
+#
+}#
+ # Change outliers to NA's#
+      Bn[Bn==999.9] = NA#
+      vr[vr==9999]  = NA#
+      np[np==999.9] = NA#
+      Temp[Temp==9999999] = NA#
+ # plot the Bn model results#
+#  par(mfrow = c(2, 1)) # this is if you want B and V on same page#
+#
+if (plotB == 'yes') {      #
+plotDataBn = plotMag(ddate,Bn,date1=date1,wwindow=wwindow,models=models,smodels=smodels,#
+		nsmooth=nsmooth,bmax=bmax,sc= sDataSet, plotRealizations= plotRealizations, #
+		plotQuantiles= plotQuantiles)#
+}      #
+    #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+      # plot the vr model results#
+if (plotV == 'yes') {  #
+   dev.new()   #
+   plotDatavr = plotVr(ddate,vr,date1=date1,wwindow=wwindow,models=models,smodels=smodels,#
+   nsmooth=nsmooth,sc=sDataSet,plotRealizations= plotRealizations, #
+		plotQuantiles= plotQuantiles)#
+}      #
+#      par(mfrow = c(1, 1)) # only if plotting to the same window#
+    #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+source("projectZed.R")
+plotVr <- function(ddate,vr,date1=date1,wwindow=wwindow,#
+                  models=models,smodels=smodels,#
+                  nsmooth=nsmooth,sc="OMNI",plotRealizations= plotRealizations, #
+				  plotQuantiles= plotQuantiles) {#
+  err = 0 # set the error flag to zero#
+  # Plot the data#
+  vmin = 300 # set up some default plotting parameters#
+  vmax = 700#
+  symSize = 0.25#
+  cex1    = 1.0#
+  mlwd=2#
+  xmin = date1 - wwindow*3600.#
+  xmax = date1 + wwindow*3600.#
+  vrNow = vr[ddate==date1]#
+  nshift = round(24*27.2753)#
+  vrRecurrence = shift(vr,nshift)#
+  vrZero = 0.0*vr + 500.#
+  vrPsychic = vr*0.0 + runif(1,vmin,vmax)#
+  vrPersistence = vr*0.0+vrNow#
+  ipred = ((ddate >= date1) & (ddate <= xmax))#
+  isub  = ((ddate >=xmin) & (ddate <= xmax))#
+  imodels = (models == T) #
+  vmin  = min(vr[isub],na.rm=T)#
+  vmax  = max(vr[isub],na.rm=T)#
+  #plot(ddate,Bn,xlim=c(xmin,xmax))#
+  plot(ddate[isub],vr[isub],ylim=c(vmin,vmax),#
+       xlab="Time (Date)",ylab="vr (km/s)",cex=symSize,#
+       xlim=c(xmin,xmax),type="l",xaxt="n")#
+  axis.POSIXct(1, at = seq(xmin,xmax, by = "day"), format = "%m/%d/%y")#
+  #axis.POSIXct(3, at = seq(xmin,xmax, by = "hour"), format = "%H")#
+  #box()#
+  lines(c(date1,date1),c(vmin,vmax),type="l",col="red",lwd=3)#
+  lines(c(min(ddate)-2,max(ddate)+2),c(0,0),type="l")#
+  # add in some model predictions:#
+  # add in some model predictions:#
+  # Here's the order: psychic,zero,persistence, recurrence,pattrec,cme1,turbulence,mcmc#
+  nipred  = length(vr[ipred])#
+  cmodels = c("red","blue","green","brown","purple","blue1","magenta","green4","navy","blue4")#
+  corrVec = 0.0*vector("numeric",length(models))#
+  probFor = 0.0*vector("numeric",length(models))#
+  MSE     = 0.0*vector("numeric",length(models))#
+ if (models[1] == T) {#
+ 	dn = wwindow / 2#
+	ntot    = length(vr)#
+	n1 = min((1:ntot)[ddate==date1])#
+	x1   = vr[(n1-2*dn):n1]#
+	vrZero = 0.0*vr + mean(x1)#
+    lines(ddate[ipred],vrZero[ipred],type="l",col=cmodels[1])#
+    corrVec[1] = cor(vr[ipred],vrZero[ipred],method="pearson",use="complete")#
+    MSE[1] = mse(vrZero[ipred], vr[ipred], na.rm=T)#
+  }    #
+  if (models[2] == T) {  # psychic model#
+    lines(ddate[ipred],vrPsychic[ipred],type="l",col=cmodels[2])#
+    corrVec[2] = cor(vr[ipred],vrPsychic[ipred],method="pearson",use="complete")#
+    MSE[2] = mse(vrPsychic[ipred], vr[ipred], na.rm=T)#
+  }#
+  if (models[3] == T) {#
+    lines(ddate[ipred],vrPersistence[ipred],type="l",col=cmodels[3])#
+    corrVec[3] = cor(vr[ipred],vrPersistence[ipred],method="pearson",use="complete")#
+    MSE[3] = mse(vrPersistence[ipred], vr[ipred], na.rm=T)#
+  }    #
+  if (models[4] == T) {#
+    lines(ddate[ipred],vrRecurrence[ipred],c(0,0),type="l",col=cmodels[4])#
+    corrVec[4] = cor(vr[ipred],vrRecurrence[ipred],method="pearson",use="complete")#
+    MSE[4] = mse(vrRecurrence[ipred], vr[ipred], na.rm=T)#
+  }  #
+#
+	if (model[6] == T) {#
+	}#
+	if (models[5] == T) {#
+	arrPattRec = pattRec(ddate,Bn=vr,date1=date1,wwindow=wwindow,bmax=vmax,plotRealizations=plotRealizations)#
+    meanVrPred = arrPattRec$meanBnPred#
+    VrRealizations = arrPattRec$BnRealizations#
+    nrow = dim(VrRealizations)[1]#
+    ncol = dim(VrRealizations)[2]#
+    probForAll = vector("numeric",ncol)#
+    nrow = dim(VrRealizations)[1]#
+    ncol = dim(VrRealizations)[2]#
+    for (i in 1:(ncol)) {#
+        if (plotRealizations == 'yes') {lines(ddate[ipred],VrRealizations[,i],type="l",col="grey")}	#
+       # if (min(VrRealizations[,i]) < 200.0) {probForAll[i] = 100.}      	#
+    }#
+    # compute quantiles#
+    quantArr = matrix(0,5,nrow)#
+    for (i in 1:(nrow)) {#
+        quantOne = quantile(VrRealizations[i,])#
+        quantArr[,i] = quantOne#
+    }    #
+    #lines(ddateCME1,quantArr[2,],type="l",col="green3",lwd=2)#
+    #lines(ddateCME1,quantArr[4,],type="l",col="green3",lwd=2)#
+    ypoly = c(quantArr[2,],rev(quantArr[4,]))#
+    xpoly = c(ddate[ipred],rev(ddate[ipred]))#
+    if (plotQuantiles=="yes") {polygon(xpoly,ypoly,col=rgb(0, 1, 0,0.3),border=NA)}#
+    points(ddate[ipred],meanVrPred,col=cmodels[5],lwd=mlwd,type="l")#
+    if (plotQuantiles=="yes") {text(xmax-(xmax-xmin)/8.,vmin,"25/75% Quantiles",cex=cex1,col="green3")}#
+    corrVec[5] = cor(vr[ipred], meanVrPred,method="pearson",use="complete")#
+    #probFor[5] = sum(probForAll)/ncol#
+    MSE[5] = mse(meanVrPred, vr[ipred], na.rm=T)#
+#
+	}    #
+if (models[6] == T) {#
+    arrCME1 = readCME1Vel()#
+    ddateCME1 = arrCME1$ddate#
+    vrCME1 = arrCME1$vr#
+    vrCME1Realizations = arrCME1$vrRealizations#
+    vrCME1_int = approx(as.numeric(ddateCME1),vrCME1,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    vrCME1_inty = vrCME1_int$y#
+    nrow = dim(vrCME1Realizations)[1]#
+    ncol = dim(vrCME1Realizations)[2]#
+    for (i in 1:(ncol-2)) {#
+        lines(ddateCME1,vrCME1Realizations[,i],type="l",col="grey")	#
+    }#
+    lines(ddateCME1,vrCME1,type="l",col=cmodels[6])#
+    lines(ddate[ipred],vrCME1_inty,type="l",col=cmodels[6])#
+    # compute quantiles#
+    quantArr = matrix(0,5,nrow)#
+    for (i in 1:(nrow)) {#
+        quantOne = quantile(vrCME1Realizations[i,])#
+        quantArr[,i] = quantOne#
+    }    #
+    lines(ddateCME1,quantArr[2,],type="l",col="green3",lwd=2)#
+    lines(ddateCME1,quantArr[4,],type="l",col="green3",lwd=2)#
+    if (plotQuantiles=="yes") {text(xmax-(xmax-xmin)/8.,vmin,"25/75% Quantiles",cex=cex1,col="green3")}#
+    corrVec[6] = cor(vr[ipred],vrCME1_inty,method="pearson",use="complete")#
+    MSE[6] = mse(vrCME1_inty, vr[ipred], na.rm=T)#
+}    #
+  skill = (1. - MSE/MSE[1])*100.#
+  cex1 = 0.5#
+#
+  lines(ddate[isub],vr[isub],type="l")#
+  lines(c(date1,date1),c(vmin,vmax),type="l",col="red",lwd=3)#
+  lines(ddate[ipred],vrZero[ipred],type="l",col=cmodels[1])#
+  legendOn = T#
+  dvDrop = 1.5#
+#
+  legend(xmin,vmax,lty=replicate(length(models[imodels])+1,1),c(sc,smodels[imodels]),#
+  lwd=replicate(length(models[imodels])+1,2.5),text.col=c("black",cmodels[imodels]),#
+  col=c("black",cmodels[imodels]),cex=cex1)#
+if (legendOn == T) {#
+  legend(xmin,vmax/dvDrop,paste(smodels[imodels],":",format(corrVec[imodels],digits=4),sep=""),#
+  text.col=cmodels[imodels],cex=cex1,title.col="black",title="Corr. Coeff.")#
+  legend(xmin+(xmax-xmin)/3.,vmax/dvDrop,paste(smodels[imodels],": ",format(MSE[imodels],digits=4),sep=""),text.col=cmodels[imodels],cex=cex1,title.col="black",title="MSE (km/sec^2)")#
+  legend(xmin+(xmax-xmin)*2/3.,vmax/dvDrop,paste(smodels[imodels],": ",format(skill[imodels],digits=4),sep=""),text.col=cmodels[imodels],cex=cex1,title.col="black",title="Skill Score (%)")#
+}  #
+  return(err)#
+}
+plotDatavr = plotVr(ddate,vr,date1=date1,wwindow=wwindow,models=models,smodels=smodels,#
+   nsmooth=nsmooth,sc=sDataSet,plotRealizations= plotRealizations, #
+		plotQuantiles= plotQuantiles)
+models[1]
+models[6]
+models[5]
+source("projectZed.R")
+vr[ipred]
+err = 0 # set the error flag to zero#
+  # Plot the data#
+  vmin = 300 # set up some default plotting parameters#
+  vmax = 700#
+  symSize = 0.25#
+  cex1    = 1.0#
+  mlwd=2#
+  xmin = date1 - wwindow*3600.#
+  xmax = date1 + wwindow*3600.#
+  vrNow = vr[ddate==date1]#
+  nshift = round(24*27.2753)#
+  vrRecurrence = shift(vr,nshift)#
+  vrZero = 0.0*vr + 500.#
+  vrPsychic = vr*0.0 + runif(1,vmin,vmax)#
+  vrPersistence = vr*0.0+vrNow#
+  ipred = ((ddate >= date1) & (ddate <= xmax))#
+  isub  = ((ddate >=xmin) & (ddate <= xmax))#
+  imodels = (models == T)
+ipred
+vr[ipred]
+source('projectZed.R')
+err = 0 # set the error flag to zero#
+  # Plot the data#
+  vmin = 200 # set up some default plotting parameters#
+  vmax = 800#
+  symSize = 0.25#
+  cex1    = 1.0#
+  mlwd=2#
+  xmin = date1 - wwindow*3600.#
+  xmax = date1 + wwindow*3600.#
+  vrNow = vr[ddate==date1]#
+  nshift = round(24*27.2753)#
+  vrRecurrence = shift(vr,nshift)#
+  vrZero = 0.0*vr + 500.#
+  vrPsychic = vr*0.0 + runif(1,vmin,vmax)#
+  vrPersistence = vr*0.0+vrNow
+vrNow
+ipred = ((ddate >= date1) & (ddate <= xmax))#
+  isub  = ((ddate >=xmin) & (ddate <= xmax))#
+  imodels = (models == T) #
+  #vmin  = min(vr[isub],na.rm=T)#
+  #vmax  = max(vr[isub],na.rm=T)#
+  #plot(ddate,Bn,xlim=c(xmin,xmax))#
+  plot(ddate[isub],vr[isub],ylim=c(vmin,vmax),#
+       xlab="Time (Date)",ylab="vr (km/s)",cex=symSize,#
+       xlim=c(xmin,xmax),type="l",xaxt="n")#
+  axis.POSIXct(1, at = seq(xmin,xmax, by = "day"), format = "%m/%d/%y")#
+  #axis.POSIXct(3, at = seq(xmin,xmax, by = "hour"), format = "%H")#
+  #box()#
+  lines(c(date1,date1),c(vmin,vmax),type="l",col="red",lwd=3)#
+  lines(c(min(ddate)-2,max(ddate)+2),c(0,0),type="l")
+dev.off()
+ipred = ((ddate >= date1) & (ddate <= xmax))#
+  isub  = ((ddate >=xmin) & (ddate <= xmax))#
+  imodels = (models == T) #
+  #vmin  = min(vr[isub],na.rm=T)#
+  #vmax  = max(vr[isub],na.rm=T)#
+  #plot(ddate,Bn,xlim=c(xmin,xmax))#
+  plot(ddate[isub],vr[isub],ylim=c(vmin,vmax),#
+       xlab="Time (Date)",ylab="vr (km/s)",cex=symSize,#
+       xlim=c(xmin,xmax),type="l",xaxt="n")#
+  axis.POSIXct(1, at = seq(xmin,xmax, by = "day"), format = "%m/%d/%y")#
+  #axis.POSIXct(3, at = seq(xmin,xmax, by = "hour"), format = "%H")#
+  #box()#
+  lines(c(date1,date1),c(vmin,vmax),type="l",col="red",lwd=3)#
+  lines(c(min(ddate)-2,max(ddate)+2),c(0,0),type="l")#
+  # add in some model predictions:#
+  # add in some model predictions:#
+  # Here's the order: psychic,zero,persistence, recurrence,pattrec,cme1,turbulence,mcmc#
+  nipred  = length(vr[ipred])#
+  cmodels = c("red","blue","green","brown","purple","blue1","magenta","green4","navy","blue4")#
+  corrVec = 0.0*vector("numeric",length(models))#
+  probFor = 0.0*vector("numeric",length(models))#
+  MSE     = 0.0*vector("numeric",length(models))#
+ if (models[1] == T) {#
+ 	dn = wwindow / 2#
+	ntot    = length(vr)#
+	n1 = min((1:ntot)[ddate==date1])#
+	x1   = vr[(n1-2*dn):n1]#
+	vrZero = 0.0*vr + mean(x1)#
+    lines(ddate[ipred],vrZero[ipred],type="l",col=cmodels[1])#
+    corrVec[1] = cor(vr[ipred],vrZero[ipred],method="pearson",use="complete")#
+    MSE[1] = mse(vrZero[ipred], vr[ipred], na.rm=T)#
+  }
+vr[ipred]
+vrZero[ipred]
+range(Temp)
+range(Temp,na.rm=TRUE)
+plot(Temp,type='l')
+err = 0 # set the error flag to zero#
+  # Plot the data#
+  Tmin = 1e5 # set up some default plotting parameters#
+  Tmax = 3e6#
+  symSize = 0.25#
+  cex1    = 1.0#
+  mlwd=2#
+  xmin = date1 - wwindow*3600.#
+  xmax = date1 + wwindow*3600.#
+  TempNow = Temp[ddate==date1]#
+  nshift = round(24*27.2753)#
+  TempRecurrence = shift(Temp,nshift)#
+  TempZero = 0.0*Temp + 3e6#
+  TempPsychic = Temp*0.0 + runif(1,Tmin,Tmax)#
+  TempPersistence = Temp*0.0+vrNow#
+  ipred = ((ddate >= date1) & (ddate <= xmax))#
+  isub  = ((ddate >=xmin) & (ddate <= xmax))#
+  imodels = (models == T) #
+  plot(ddate[isub],Temp[isub],ylim=c(Tmin,Tmax),#
+       xlab="Time (Date)",ylab="Temperature (K)",cex=symSize,#
+       xlim=c(xmin,xmax),type="l",xaxt="n")#
+  axis.POSIXct(1, at = seq(xmin,xmax, by = "day"), format = "%m/%d/%y")#
+  lines(c(date1,date1),c(Tmin,Tmax),type="l",col="red",lwd=3)#
+  lines(c(min(ddate)-2,max(ddate)+2),c(0,0),type="l")
+err = 0 # set the error flag to zero#
+  # Plot the data#
+  Tmin = 1e5 # set up some default plotting parameters#
+  Tmax = 1e6#
+  symSize = 0.25#
+  cex1    = 1.0#
+  mlwd=2#
+  xmin = date1 - wwindow*3600.#
+  xmax = date1 + wwindow*3600.#
+  TempNow = Temp[ddate==date1]#
+  nshift = round(24*27.2753)#
+  TempRecurrence = shift(Temp,nshift)#
+  TempZero = 0.0*Temp + 3e6#
+  TempPsychic = Temp*0.0 + runif(1,Tmin,Tmax)#
+  TempPersistence = Temp*0.0+vrNow#
+  ipred = ((ddate >= date1) & (ddate <= xmax))#
+  isub  = ((ddate >=xmin) & (ddate <= xmax))#
+  imodels = (models == T) #
+  plot(ddate[isub],Temp[isub],ylim=c(Tmin,Tmax),#
+       xlab="Time (Date)",ylab="Temperature (K)",cex=symSize,#
+       xlim=c(xmin,xmax),type="l",xaxt="n")#
+  axis.POSIXct(1, at = seq(xmin,xmax, by = "day"), format = "%m/%d/%y")#
+  lines(c(date1,date1),c(Tmin,Tmax),type="l",col="red",lwd=3)#
+  lines(c(min(ddate)-2,max(ddate)+2),c(0,0),type="l")#
+  # add in some model predictions:#
+  # add in some model predictions:#
+  # Here's the order: psychic,zero,persistence, recurrence,pattrec,cme1,turbulence,mcmc#
+  nipred  = length(Temp[ipred])#
+  cmodels = c("red","blue","green","brown","purple","blue1","magenta","green4","navy","blue4")#
+  corrVec = 0.0*vector("numeric",length(models))#
+  probFor = 0.0*vector("numeric",length(models))#
+  MSE     = 0.0*vector("numeric",length(models))#
+ if (models[1] == T) {#
+ 	dn = wwindow / 2#
+	ntot    = length(vr)#
+	n1 = min((1:ntot)[ddate==date1])#
+	x1   = Temp[(n1-2*dn):n1]#
+	TempZero = 0.0*Temp + mean(x1,na.rm=TRUE)#
+    lines(ddate[ipred],TempZero[ipred],type="l",col=cmodels[1])#
+    corrVec[1] = cor(Temp[ipred],TempZero[ipred],method="pearson",use="complete")#
+    MSE[1] = mse(TempZero[ipred], Temp[ipred], na.rm=T)#
+  }
+err = 0 # set the error flag to zero#
+  # Plot the data#
+  Tmin = 1e4 # set up some default plotting parameters#
+  Tmax = 1e6#
+  symSize = 0.25#
+  cex1    = 1.0#
+  mlwd=2#
+  xmin = date1 - wwindow*3600.#
+  xmax = date1 + wwindow*3600.#
+  TempNow = Temp[ddate==date1]#
+  nshift = round(24*27.2753)#
+  TempRecurrence = shift(Temp,nshift)#
+  TempZero = 0.0*Temp + 3e6#
+  TempPsychic = Temp*0.0 + runif(1,Tmin,Tmax)#
+  TempPersistence = Temp*0.0+vrNow#
+  ipred = ((ddate >= date1) & (ddate <= xmax))#
+  isub  = ((ddate >=xmin) & (ddate <= xmax))#
+  imodels = (models == T) #
+  plot(ddate[isub],Temp[isub],ylim=c(Tmin,Tmax),#
+       xlab="Time (Date)",ylab="Temperature (K)",cex=symSize,#
+       xlim=c(xmin,xmax),type="l",xaxt="n")#
+  axis.POSIXct(1, at = seq(xmin,xmax, by = "day"), format = "%m/%d/%y")#
+  lines(c(date1,date1),c(Tmin,Tmax),type="l",col="red",lwd=3)#
+  lines(c(min(ddate)-2,max(ddate)+2),c(0,0),type="l")#
+  # add in some model predictions:#
+  # add in some model predictions:#
+  # Here's the order: psychic,zero,persistence, recurrence,pattrec,cme1,turbulence,mcmc#
+  nipred  = length(Temp[ipred])#
+  cmodels = c("red","blue","green","brown","purple","blue1","magenta","green4","navy","blue4")#
+  corrVec = 0.0*vector("numeric",length(models))#
+  probFor = 0.0*vector("numeric",length(models))#
+  MSE     = 0.0*vector("numeric",length(models))#
+ if (models[1] == T) {#
+ 	dn = wwindow / 2#
+	ntot    = length(vr)#
+	n1 = min((1:ntot)[ddate==date1])#
+	x1   = Temp[(n1-2*dn):n1]#
+	TempZero = 0.0*Temp + mean(x1,na.rm=TRUE)#
+    lines(ddate[ipred],TempZero[ipred],type="l",col=cmodels[1])#
+    corrVec[1] = cor(Temp[ipred],TempZero[ipred],method="pearson",use="complete")#
+    MSE[1] = mse(TempZero[ipred], Temp[ipred], na.rm=T)#
+  }
+arrPattRec = pattRec(ddate,Bn=Temp,date1=date1,wwindow=wwindow,bmax=vmax,plotRealizations=plotRealizations)#
+    meanTPred = arrPattRec$meanBnPred#
+    TRealizations = arrPattRec$BnRealizations#
+    nrow = dim(TRealizations)[1]#
+    ncol = dim(TRealizations)[2]#
+    probForAll = vector("numeric",ncol)#
+    nrow = dim(TRealizations)[1]#
+    ncol = dim(TRealizations)[2]#
+    for (i in 1:(ncol)) {#
+        if (plotRealizations == 'yes') {lines(ddate[ipred],TRealizations[,i],type="l",col="grey")}	#
+       # if (min(VrRealizations[,i]) < 200.0) {probForAll[i] = 100.}      	#
+    }#
+    # compute quantiles#
+    quantArr = matrix(0,5,nrow)#
+    for (i in 1:(nrow)) {#
+        quantOne = quantile(TRealizations[i,])#
+        quantArr[,i] = quantOne#
+    }    #
+#
+    ypoly = c(quantArr[2,],rev(quantArr[4,]))#
+    xpoly = c(ddate[ipred],rev(ddate[ipred]))#
+    if (plotQuantiles=="yes") {polygon(xpoly,ypoly,col=rgb(0, 1, 0,0.3),border=NA)}#
+    points(ddate[ipred],meanTPred,col=cmodels[5],lwd=mlwd,type="l")#
+    if (plotQuantiles=="yes") {text(xmax-(xmax-xmin)/8.,vmin,"25/75% Quantiles",cex=cex1,col="green3")}#
+    corrVec[5] = cor(Temp[ipred], meanTPred,method="pearson",use="complete")#
+    #probFor[5] = sum(probForAll)/ncol#
+    MSE[5] = mse(meanTPred, Temp[ipred], na.rm=T)
+if (plotQuantiles=="yes") {text(xmax-(xmax-xmin)/8.,ymax,"25/75% Quantiles",cex=cex1,col="green3")}
+xmin
+xmax
+Tmin
+Tmax
+if (plotQuantiles=="yes") {text(xmax-(xmax-xmin)/8.,Tmax,"25/75% Quantiles",cex=cex1,col="green3")}
+skill = (1. - MSE/MSE[1])*100.#
+  cex1 = 0.5#
+#
+  lines(ddate[isub],Temp[isub],type="l")#
+  lines(c(date1,date1),c(Tmin,Tmax),type="l",col="red",lwd=3)#
+  lines(ddate[ipred],TempZero[ipred],type="l",col=cmodels[1])#
+  legendOn = T#
+  dTDrop = 0.8#
+#
+  legend(xmin,vmax,lty=replicate(length(models[imodels])+1,1),c(sc,smodels[imodels]),#
+  lwd=replicate(length(models[imodels])+1,2.5),text.col=c("black",cmodels[imodels]),#
+  col=c("black",cmodels[imodels]),cex=cex1)#
+if (legendOn == T) {#
+  legend(xmin,Tmax/dTDrop,paste(smodels[imodels],":",format(corrVec[imodels],digits=4),sep=""),#
+  text.col=cmodels[imodels],cex=cex1,title.col="black",title="Corr. Coeff.")#
+  legend(xmin+(xmax-xmin)/3.,Tmax/dTDrop,paste(smodels[imodels],": ",format(MSE[imodels],digits=4),sep=""),text.col=cmodels[imodels],cex=cex1,title.col="black",title="MSE (km/sec^2)")#
+  legend(xmin+(xmax-xmin)*2/3.,Tmax/dTDrop,paste(smodels[imodels],": ",format(skill[imodels],digits=4),sep=""),text.col=cmodels[imodels],cex=cex1,title.col="black",title="Skill Score (%)")#
+}
+sc=DataSet
+sc=sDataSet
+skill = (1. - MSE/MSE[1])*100.#
+  cex1 = 0.5#
+#
+  lines(ddate[isub],Temp[isub],type="l")#
+  lines(c(date1,date1),c(Tmin,Tmax),type="l",col="red",lwd=3)#
+  lines(ddate[ipred],TempZero[ipred],type="l",col=cmodels[1])#
+  legendOn = T#
+  dTDrop = 0.8#
+#
+  legend(xmin,vmax,lty=replicate(length(models[imodels])+1,1),c(sc,smodels[imodels]),#
+  lwd=replicate(length(models[imodels])+1,2.5),text.col=c("black",cmodels[imodels]),#
+  col=c("black",cmodels[imodels]),cex=cex1)#
+if (legendOn == T) {#
+  legend(xmin,Tmax/dTDrop,paste(smodels[imodels],":",format(corrVec[imodels],digits=4),sep=""),#
+  text.col=cmodels[imodels],cex=cex1,title.col="black",title="Corr. Coeff.")#
+  legend(xmin+(xmax-xmin)/3.,Tmax/dTDrop,paste(smodels[imodels],": ",format(MSE[imodels],digits=4),sep=""),text.col=cmodels[imodels],cex=cex1,title.col="black",title="MSE (km/sec^2)")#
+  legend(xmin+(xmax-xmin)*2/3.,Tmax/dTDrop,paste(smodels[imodels],": ",format(skill[imodels],digits=4),sep=""),text.col=cmodels[imodels],cex=cex1,title.col="black",title="Skill Score (%)")#
+}
+skill = (1. - MSE/MSE[1])*100.#
+  cex1 = 0.5#
+#
+  lines(ddate[isub],Temp[isub],type="l")#
+  lines(c(date1,date1),c(Tmin,Tmax),type="l",col="red",lwd=3)#
+  lines(ddate[ipred],TempZero[ipred],type="l",col=cmodels[1])#
+  legendOn = T#
+  dTDrop = 0.8#
+#
+  legend(xmin,Tmax,lty=replicate(length(models[imodels])+1,1),c(sc,smodels[imodels]),#
+  lwd=replicate(length(models[imodels])+1,2.5),text.col=c("black",cmodels[imodels]),#
+  col=c("black",cmodels[imodels]),cex=cex1)#
+if (legendOn == T) {#
+  legend(xmin,Tmax/dTDrop,paste(smodels[imodels],":",format(corrVec[imodels],digits=4),sep=""),#
+  text.col=cmodels[imodels],cex=cex1,title.col="black",title="Corr. Coeff.")#
+  legend(xmin+(xmax-xmin)/3.,Tmax/dTDrop,paste(smodels[imodels],": ",format(MSE[imodels],digits=4),sep=""),text.col=cmodels[imodels],cex=cex1,title.col="black",title="MSE (km/sec^2)")#
+  legend(xmin+(xmax-xmin)*2/3.,Tmax/dTDrop,paste(smodels[imodels],": ",format(skill[imodels],digits=4),sep=""),text.col=cmodels[imodels],cex=cex1,title.col="black",title="Skill Score (%)")#
+}
+skill = (1. - MSE/MSE[1])*100.#
+  cex1 = 0.5#
+#
+  lines(ddate[isub],Temp[isub],type="l")#
+  lines(c(date1,date1),c(Tmin,Tmax),type="l",col="red",lwd=3)#
+  lines(ddate[ipred],TempZero[ipred],type="l",col=cmodels[1])#
+  legendOn = T#
+  dTDrop = 0.8#
+#
+  legend(xmin,Tmax,lty=replicate(length(models[imodels])+1,1),c(sc,smodels[imodels]),#
+  lwd=replicate(length(models[imodels])+1,2.5),text.col=c("black",cmodels[imodels]),#
+  col=c("black",cmodels[imodels]),cex=cex1)#
+if (legendOn == T) {#
+  legend(xmin,Tmax*dTDrop,paste(smodels[imodels],":",format(corrVec[imodels],digits=4),sep=""),#
+  text.col=cmodels[imodels],cex=cex1,title.col="black",title="Corr. Coeff.")#
+  legend(xmin+(xmax-xmin)/3.,Tmax*dTDrop,paste(smodels[imodels],": ",format(MSE[imodels],digits=4),sep=""),text.col=cmodels[imodels],cex=cex1,title.col="black",title="MSE (km/sec^2)")#
+  legend(xmin+(xmax-xmin)*2/3.,Tmax*dTDrop,paste(smodels[imodels],": ",format(skill[imodels],digits=4),sep=""),text.col=cmodels[imodels],cex=cex1,title.col="black",title="Skill Score (%)")#
+}
+source("projectZed.R")
+symSize = 0.25#
+  cex1    = 1.0#
+  mlwd=2#
+  xmin = date1 - wwindow*3600.#
+  xmax = date1 + wwindow*3600.#
+  npNow = np[ddate==date1]#
+  nshift = round(24*27.2753)#
+  npRecurrence = shift(Temp,nshift)#
+  npZero = 0.0*np + 3e6
+npNow
+plot(np[isub])
+npPersistence = np*0.0+TempNow#
+  ipred = ((ddate >= date1) & (ddate <= xmax))#
+  isub  = ((ddate >=xmin) & (ddate <= xmax))#
+  imodels = (models == T)
+plot(np[isub])
+q()
+source('projectZed.R')
+# read in the data#
+#
+source("~/Dropbox/ProjectZed/michal/R/libPRojectZed.R")#
+#
+library("timeSeries")#
+#
+readDataFlag = T#
+#
+# Read in the data#
+#
+if (readDataFlag == T) {#
+  readData = readMagV_OMNI() # read in the data#
+  readDataFlag == F#
+  ddate = readData$ddate#
+  year = readData$year#
+  doy = readData$doy#
+  hour = readData$hour#
+  Br =readData$Br#
+  Bt =readData$Bt#
+  Bn =readData$Bn#
+  B  =readData$B#
+  vr = readData$vr#
+  np = readData$np#
+  Temp = readData$Temp#
+  time = year + (doy+hour/24.)/365.25#
+  # test routine by setting Br to be various functions#
+  #noise = 0.5#
+  #Br    = sin(time*pi*24.) + runif(ntot,-noise,noise)#
+  Br[Br==999.9] = NA#
+  Bt[Bt==999.9] = NA#
+  Bn[Bn==999.9] = NA#
+  B[B==999.9]   = NA#
+# old code that pulls out just the good data #
+#  good = Br < 500#
+#  ddate = ddate[good]#
+#  Br   = Br[good]#
+#  Bt   = Bt[good]#
+#  Bn   = Bn[good]#
+#  B    = B[good]#
+#  vr   = vr[good]#
+#  year = year[good]#
+#  doy  = doy[good]#
+#  hour = hour[good]#
+#  time = time[good]#
+  ntot    = length(Br)#
+  readDataFlag = F#
+}#
+#
+# interpolate Bz linearly#
+#
+#Bn = interpNA(Bn, method = "linear")#
+#
+istart = 79335#
+istop = length(Bn)#
+Bn = Bn[istart:istop]#
+time = time[istart:istop]#
+#
+plot(time, Bn,xlab="Time (years)",ylab="Bn (nT)",main="n-Component of the Interplanetary Magnetic Field")#
+#
+mu = mean(na.omit(Bn))#
+sigma = sd(na.omit(Bn))#
+#
+# plot data at different resolutions#
+#
+hist(Bn,breaks=500,xlim=c(-100,100),xlab="Bn (nT)",ylab="Number of Points",main="Histogram of Bn")#
+hist(Bn,breaks=500,xlim=c(-40,40),xlab="Bn (nT)",ylab="Number of Points",main="Histogram of Bn")#
+hist(Bn,breaks=500,xlim=c(-10,10),xlab="Bn (nT)",ylab="Number of Points",main="Histogram of Bn")#
+#
+# Do Shapiro-Wilk normality test#
+#
+shapiro.test(na.omit(Bn)[1:5000])#
+#
+# this shows that the data are NOT normally distributed#
+# limited to 5000 points, but < 1E-16 for all tested intervals#
+#
+# not compute best Gaussian and plot#
+#
+hist(na.omit(Bn),breaks=500,xlim=c(-10,10),prob=T,xlab="Bn (nT)",ylab="Number of Points",main="Histogram of Bn")#
+lines(density(na.omit(Bn)),lwd=2,col="red")#
+x = seq(-10,10,length=100)#
+y=dnorm(x,mu,sigma)#
+lines(x,y,lwd=2,col="blue")#
+#
+# another option for testing normal distribution is the quantile-quantile plot#
+#
+qqnorm(na.omit(Bn))#
+# tests for stationarity: all show Bn is stationary#
+#
+Box.test(BnSub,lag=20,type="Ljung-Box") # small value => Stationary#
+library(fpp)#
+adf.test(BnSub,alternative="stationary")  # small value => Stationary#
+kpss.test(BnSub) # large value => Stationary#
+# plot long term averages of Bn to look for residual#
+#
+BnDF <- data.frame(Bn = Bn,time=time,year=year)#
+aggBn = aggregate(x = BnDF, by = list(year), FUN = "mean")#
+plot(aggBn$time,aggBn$Bn,type="l",ylab="<Bn> (nT)",xlab="Time (Years)",main="Yearly Mean Values of Bn")#
+abline(0,0,lty=3,col="red")#
+#
+solMin = c(1954+1.5/12.,1964+9.5/12.,1976+4.5/12, 1986+2.5/12.,1996+5.5/12.,2008+0.5/12.)#
+solMax = c(1958+2.5/12.,1968+10.5/12.,1979+11.5/12.,1989+6.5/12.,2000+2.5/12.,2014+3.5/12.)#
+#
+for (i in 1:length(solMin)) {#
+	lines(replicate(2,solMin[i]),c(-100,100),col="red",lty=3)#
+	lines(replicate(2,solMax[i]),c(-100,100),col="blue",lty=3)#
+}#
+#
+# power spectrum of the yearly averages...not that useful....#
+ps = spectrum(aggBn$time)#
+#
+# do some ARIMA analysis#
+library(forecast)#
+n1 = 12000#
+n2 = 12100#
+BnArimaAnal = Bn[n1:n2]#
+tArimaAnal = time[n1:n2]#
+aa = auto.arima(BnArimaAnal) #
+faa = forecast(aa) #
+plot(faa,ylim=c(-10,10),ylab="Bn (nT)",xlab="Time (Hours)")
+install.packages('timeSeries')
+rm(list=ls())
+# read in the data#
+#
+source("~/Dropbox/ProjectZed/michal/R/libPRojectZed.R")#
+#
+library("timeSeries")#
+#
+readDataFlag = T#
+#
+# Read in the data#
+#
+if (readDataFlag == T) {#
+  readData = readMagV_OMNI() # read in the data#
+  readDataFlag == F#
+  ddate = readData$ddate#
+  year = readData$year#
+  doy = readData$doy#
+  hour = readData$hour#
+  Br =readData$Br#
+  Bt =readData$Bt#
+  Bn =readData$Bn#
+  B  =readData$B#
+  vr = readData$vr#
+  np = readData$np#
+  Temp = readData$Temp#
+  time = year + (doy+hour/24.)/365.25#
+  # test routine by setting Br to be various functions#
+  #noise = 0.5#
+  #Br    = sin(time*pi*24.) + runif(ntot,-noise,noise)#
+  Br[Br==999.9] = NA#
+  Bt[Bt==999.9] = NA#
+  Bn[Bn==999.9] = NA#
+  B[B==999.9]   = NA#
+# old code that pulls out just the good data #
+#  good = Br < 500#
+#  ddate = ddate[good]#
+#  Br   = Br[good]#
+#  Bt   = Bt[good]#
+#  Bn   = Bn[good]#
+#  B    = B[good]#
+#  vr   = vr[good]#
+#  year = year[good]#
+#  doy  = doy[good]#
+#  hour = hour[good]#
+#  time = time[good]#
+  ntot    = length(Br)#
+  readDataFlag = F#
+}
+istart = 79335#
+istop = length(Bn)#
+Bn = Bn[istart:istop]#
+time = time[istart:istop]#
+#
+plot(time, Bn,xlab="Time (years)",ylab="Bn (nT)",main="n-Component of the Interplanetary Magnetic Field")
+mu = mean(na.omit(Bn))#
+sigma = sd(na.omit(Bn))#
+#
+# plot data at different resolutions#
+#
+hist(Bn,breaks=500,xlim=c(-100,100),xlab="Bn (nT)",ylab="Number of Points",main="Histogram of Bn")#
+hist(Bn,breaks=500,xlim=c(-40,40),xlab="Bn (nT)",ylab="Number of Points",main="Histogram of Bn")#
+hist(Bn,breaks=500,xlim=c(-10,10),xlab="Bn (nT)",ylab="Number of Points",main="Histogram of Bn")
+# Do Shapiro-Wilk normality test#
+#
+shapiro.test(na.omit(Bn)[1:5000])#
+#
+# this shows that the data are NOT normally distributed#
+# limited to 5000 points, but < 1E-16 for all tested intervals#
+#
+# not compute best Gaussian and plot#
+#
+hist(na.omit(Bn),breaks=500,xlim=c(-10,10),prob=T,xlab="Bn (nT)",ylab="Number of Points",main="Histogram of Bn")#
+lines(density(na.omit(Bn)),lwd=2,col="red")#
+x = seq(-10,10,length=100)#
+y=dnorm(x,mu,sigma)#
+lines(x,y,lwd=2,col="blue")
+# another option for testing normal distribution is the quantile-quantile plot#
+#
+qqnorm(na.omit(Bn))#
+# tests for stationarity: all show Bn is stationary#
+#
+Box.test(BnSub,lag=20,type="Ljung-Box") # small value => Stationary#
+library(fpp)#
+adf.test(BnSub,alternative="stationary")  # small value => Stationary#
+kpss.test(BnSub) # large value => Stationary
+# power spectrum of the yearly averages...not that useful....#
+ps = spectrum(aggBn$time)#
+#
+# do some ARIMA analysis#
+library(forecast)#
+n1 = 12000#
+n2 = 12100#
+BnArimaAnal = Bn[n1:n2]#
+tArimaAnal = time[n1:n2]#
+aa = auto.arima(BnArimaAnal) #
+faa = forecast(aa) #
+plot(faa,ylim=c(-10,10),ylab="Bn (nT)",xlab="Time (Hours)")
+require("ARIMA")
+require("arima")
+install.packages('forecast')
+librar('forecast')
+library('forecast')
+# power spectrum of the yearly averages...not that useful....#
+ps = spectrum(aggBn$time)#
+#
+# do some ARIMA analysis#
+library(forecast)#
+n1 = 12000#
+n2 = 12100#
+BnArimaAnal = Bn[n1:n2]#
+tArimaAnal = time[n1:n2]#
+aa = auto.arima(BnArimaAnal) #
+faa = forecast(aa) #
+plot(faa,ylim=c(-10,10),ylab="Bn (nT)",xlab="Time (Hours)")
+# plot long term averages of Bn to look for residual#
+#
+BnDF <- data.frame(Bn = Bn,time=time,year=year)#
+aggBn = aggregate(x = BnDF, by = list(year), FUN = "mean")#
+plot(aggBn$time,aggBn$Bn,type="l",ylab="<Bn> (nT)",xlab="Time (Years)",main="Yearly Mean Values of Bn")#
+abline(0,0,lty=3,col="red")#
+#
+solMin = c(1954+1.5/12.,1964+9.5/12.,1976+4.5/12, 1986+2.5/12.,1996+5.5/12.,2008+0.5/12.)#
+solMax = c(1958+2.5/12.,1968+10.5/12.,1979+11.5/12.,1989+6.5/12.,2000+2.5/12.,2014+3.5/12.)#
+#
+for (i in 1:length(solMin)) {#
+	lines(replicate(2,solMin[i]),c(-100,100),col="red",lty=3)#
+	lines(replicate(2,solMax[i]),c(-100,100),col="blue",lty=3)#
+}
+whvar = 'vr'
+readData = readMagV_OMNI() # read in the data#
+  readDataFlag == F#
+  ddate = readData$ddate#
+  year = readData$year#
+  doy = readData$doy#
+  hour = readData$hour#
+  Br =readData$Br#
+  Bt =readData$Bt#
+  Bn =readData$Bn#
+  B  =readData$B#
+  vr = readData$vr#
+  Temp = readData$np#
+  np = readData$np#
+  time = year + (doy+hour/24.)/365.25#
+  # test routine by setting Br to be various functions#
+  #noise = 0.5#
+  #Br    = sin(time*pi*24.) + runif(ntot,-noise,noise)#
+  #Br[Br==999.9] = NA#
+  #Bt[Bt==999.9] = NA#
+  #Bn[Bn==999.9] = NA#
+  #B[B==999.9]   = NA#
+  if ( whvar == 'Bn') {#
+  	good = Br < 500#
+  	zeroOffset =mean(Br[good])  	#
+  }#
+  if (whvar == 'vr') {#
+  	good = vr < 5000#
+  	zeroOffset = mean(vr[good])#
+  }#
+  if (whvar == 'np') {#
+  	good = np < 999.9#
+  	zeroOffset = mean(np[good])	#
+  }#
+  if (whvar == 'Temp') {#
+  	good = Temp < 9999999#
+  	zeroOffset = mean(Temp[good])#
+  }#
+  ddate = ddate[good]#
+  Br   = Br[good]#
+  Bt   = Bt[good]#
+  Bn   = Bn[good]#
+  B    = B[good]#
+  vr   = vr[good]#
+  Temp = Temp[good]#
+  np   = np[good]#
+  year = year[good]#
+  doy  = doy[good]#
+  hour = hour[good]#
+  time = time[good]#
+  ntot    = length(Br)#
+  readDataFlag = F
+source('libProjectZed.R')
+readData = readMagV_OMNI() # read in the data#
+  readDataFlag == F#
+  ddate = readData$ddate#
+  year = readData$year#
+  doy = readData$doy#
+  hour = readData$hour#
+  Br =readData$Br#
+  Bt =readData$Bt#
+  Bn =readData$Bn#
+  B  =readData$B#
+  vr = readData$vr#
+  Temp = readData$np#
+  np = readData$np#
+  time = year + (doy+hour/24.)/365.25#
+  # test routine by setting Br to be various functions#
+  #noise = 0.5#
+  #Br    = sin(time*pi*24.) + runif(ntot,-noise,noise)#
+  #Br[Br==999.9] = NA#
+  #Bt[Bt==999.9] = NA#
+  #Bn[Bn==999.9] = NA#
+  #B[B==999.9]   = NA#
+  if ( whvar == 'Bn') {#
+  	good = Br < 500#
+  	zeroOffset =mean(Br[good])  	#
+  }#
+  if (whvar == 'vr') {#
+  	good = vr < 5000#
+  	zeroOffset = mean(vr[good])#
+  }#
+  if (whvar == 'np') {#
+  	good = np < 999.9#
+  	zeroOffset = mean(np[good])	#
+  }#
+  if (whvar == 'Temp') {#
+  	good = Temp < 9999999#
+  	zeroOffset = mean(Temp[good])#
+  }#
+  ddate = ddate[good]#
+  Br   = Br[good]#
+  Bt   = Bt[good]#
+  Bn   = Bn[good]#
+  B    = B[good]#
+  vr   = vr[good]#
+  Temp = Temp[good]#
+  np   = np[good]#
+  year = year[good]#
+  doy  = doy[good]#
+  hour = hour[good]#
+  time = time[good]#
+  ntot    = length(Br)#
+  readDataFlag = F
+length(good)
+zeroOffset
+date1=1067832000
+ntot
+length(vr)
+length(good)
+length(ddate)
+head(ddate)
+n = min((1:ntot)[ddate==date1])
+is.numeric(Inf)
+is.inf(n)
+length(n)
+n
+help(Inf)
+is.finite(n)
+help(mod)
+help(modul)
+10 %%3
+range(np)
+whvar = 'np'
+readData = readMagV_OMNI() # read in the data#
+  readDataFlag == F#
+  ddate = readData$ddate#
+  year = readData$year#
+  doy = readData$doy#
+  hour = readData$hour#
+  Br =readData$Br#
+  Bt =readData$Bt#
+  Bn =readData$Bn#
+  B  =readData$B#
+  vr = readData$vr#
+  Temp = readData$np#
+  np = readData$np#
+  time = year + (doy+hour/24.)/365.25#
+  # test routine by setting Br to be various functions#
+  #noise = 0.5#
+  #Br    = sin(time*pi*24.) + runif(ntot,-noise,noise)#
+  #Br[Br==999.9] = NA#
+  #Bt[Bt==999.9] = NA#
+  #Bn[Bn==999.9] = NA#
+  #B[B==999.9]   = NA#
+  if ( whvar == 'Bn') {#
+  	good = Br < 500#
+  	zeroOffset =mean(Br[good])  	#
+  }#
+  if (whvar == 'vr') {#
+  	good = vr < 5000#
+  	zeroOffset = mean(vr[good])#
+  }#
+  if (whvar == 'np') {#
+  	good = np < 999.9#
+  	zeroOffset = mean(np[good])	#
+  }#
+  if (whvar == 'Temp') {#
+  	good = Temp < 9999999#
+  	zeroOffset = mean(Temp[good])#
+  }
+zeroOffset
+tmp = np[good]
+length(tmp)
+readData = readMagV_OMNI() # read in the data#
+  readDataFlag == F#
+  ddate = readData$ddate#
+  year = readData$year#
+  doy = readData$doy#
+  hour = readData$hour#
+  Br =readData$Br#
+  Bt =readData$Bt#
+  Bn =readData$Bn#
+  B  =readData$B#
+  vr = readData$vr#
+  Temp = readData$np#
+  np = readData$np#
+  time = year + (doy+hour/24.)/365.25#
+  # test routine by setting Br to be various functions#
+  #noise = 0.5#
+  #Br    = sin(time*pi*24.) + runif(ntot,-noise,noise)#
+  #Br[Br==999.9] = NA#
+  #Bt[Bt==999.9] = NA#
+  #Bn[Bn==999.9] = NA#
+  #B[B==999.9]   = NA#
+  if ( whvar == 'Bn') {#
+  	good = Br < 500#
+  	zeroOffset =mean(Br[good])  	#
+  }#
+  if (whvar == 'vr') {#
+  	good = vr < 5000#
+  	zeroOffset = mean(vr[good])#
+  }#
+  if (whvar == 'np') {#
+  	good = np < 999.9#
+  	zeroOffset = mean(np[good])	#
+  }#
+  if (whvar == 'Temp') {#
+  	good = Temp < 9999999#
+  	zeroOffset = mean(Temp[good])#
+  }
+#Br[Br==999.9] = NA#
+  #Bt[Bt==999.9] = NA#
+  #Bn[Bn==999.9] = NA#
+  #B[B==999.9]   = NA#
+  if ( whvar == 'Bn') {#
+  	good = Br < 500#
+  	zeroOffset =mean(Br[good])  	#
+  }#
+  if (whvar == 'vr') {#
+  	good = vr < 5000#
+  	zeroOffset = mean(vr[good])#
+  }#
+  if (whvar == 'np') {#
+  	good = np < 999.9#
+  	zeroOffset = mean(np[good])	#
+  }#
+  if (whvar == 'Temp') {#
+  	good = Temp < 9999999#
+  	zeroOffset = mean(Temp[good])#
+  }#
+  ddate = ddate[good]#
+  Br   = Br[good]#
+  Bt   = Bt[good]#
+  Bn   = Bn[good]#
+  B    = B[good]#
+  vr   = vr[good]#
+  Temp = Temp[good]#
+  np   = np[good]#
+  year = year[good]#
+  doy  = doy[good]#
+  hour = hour[good]#
+  time = time[good]#
+  ntot    = length(Br)
+ntot
+range(np)
+# read in the data files#
+rm(list=ls())#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "vr"  #vr, Temp, np#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+#setwd("~Dropbox/projectZed/R/") # this is for whatever just got run#
+#setwd("~Dropbox/projectZed/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+#setwd("~/Dropbox/projectZed/R/corr-coh-Bn-6hr/") # for Bn 24hr window#
+##setwd("~/Dropbox/projectZed/michal/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+setwd("~/Dropbox/projectZed/michal/R/corr-coh-vr-24hr/") #
+#
+file_list <- list.files(pattern=".csv")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}
+dim(dataset)
+# create a 5x5 scatterplot#
+plot(dataset[,c(4,5,6,7,8)])
+# High Density Scatterplot with Binning#
+x <- dataset$coh#
+y <- dataset$corrPred#
+mtit <- "Hexagonal Binning: Coherency v. Predicted Correlation"#
+xtit <- "Coherency"#
+ytit <- "Predicted Correlation"#
+bin<-hexbin(x, y, xbins=50) #
+plot(bin, main=mtit,xlab=xtit,ylab=ytit)
+# read in the data files#
+rm(list=ls())#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "vr"  #vr, Temp, np#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+#setwd("~Dropbox/projectZed/R/") # this is for whatever just got run#
+#setwd("~Dropbox/projectZed/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+#setwd("~/Dropbox/projectZed/R/corr-coh-Bn-6hr/") # for Bn 24hr window#
+##setwd("~/Dropbox/projectZed/michal/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+setwd("~/Dropbox/projectZed/michal/R/corr-coh-vr-24hr/") #
+#
+file_list <- list.files(pattern=".csv")
+file_list
+length(file_list)
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}
+head(dataset)
+# create a 5x5 scatterplot#
+plot(dataset[,c(4,5,6,7,8)])
+plot(dataset[,4],dataset[,5])
+range(corrPrior)
+range(dataset[,4]
+)
+dataset[,4]
+range(dataset[,4])
+index <- which(dataset[,4] == -999.000)
+index
+range(dataset[,5])
+range(dataset[,6])
+range(dataset[,7])
+range(dataset[,8])
+range(dataset[,8])
+index5 <- which(dataset[,5] == -999.000)
+index5
+# Need to remove all lines with -999.0#
+index <- which(datset[,4] == -999.00)#
+dataset <- dataset[-index,]
+# Need to remove all lines with -999.0#
+index <- which(dataset[,4] == -999.00)#
+dataset <- dataset[-index,]
+range(dataset[,4])
+dim(dataset)
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}#
+# Need to remove all lines with -999.0#
+rmv = -999.0#
+#
+dataset <- dataset[!(dataset[,4] %in% rmv),]
+dim(dataset)
+range(dataset[,4])
+range(dataset[,5])
+range(dataset[,6])
+range(dataset[,7])
+range(dataset[,8])
+range(dataset[,9])
+# create a 5x5 scatterplot#
+plot(dataset[,c(4,5,6,7,8)])
+dim(dataset)
+# read in the data files#
+rm(list=ls())#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "vr"  #vr, Temp, np#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+#setwd("~Dropbox/projectZed/R/") # this is for whatever just got run#
+#setwd("~Dropbox/projectZed/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+#setwd("~/Dropbox/projectZed/R/corr-coh-Bn-6hr/") # for Bn 24hr window#
+##setwd("~/Dropbox/projectZed/michal/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+##setwd("~/Dropbox/projectZed/michal/R/corr-coh-vr-24hr/") #
+#
+setwd("~/Dropbox/projectZed/R/corr-coh-vr-24hr/") #
+#
+file_list <- list.files(pattern=".csv")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}#
+# Need to remove all lines with -999.0#
+rmv = -999.0#
+#
+dataset <- dataset[!(dataset[,4] %in% rmv),]
+dim(dataset)
+# create a 5x5 scatterplot#
+plot(dataset[,c(4,5,6,7,8)])
+# read in the data files#
+rm(list=ls())#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "vr"  #vr, Temp, np#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+#setwd("~Dropbox/projectZed/R/") # this is for whatever just got run#
+#setwd("~Dropbox/projectZed/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+#setwd("~/Dropbox/projectZed/R/corr-coh-Bn-6hr/") # for Bn 24hr window#
+##setwd("~/Dropbox/projectZed/michal/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+##setwd("~/Dropbox/projectZed/michal/R/corr-coh-vr-24hr/") #
+#
+setwd("~/Dropbox/projectZed/R/corr-coh-vr-24hr/") #
+#
+file_list <- list.files(pattern="corr-coh-vr-w24")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}
+dim(dataset)
+# create a 5x5 scatterplot#
+plot(dataset[,c(4,5,6,7,8)])
+# read in the data files#
+rm(list=ls())#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "vr"  #vr, Temp, np#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+#setwd("~Dropbox/projectZed/R/") # this is for whatever just got run#
+#setwd("~Dropbox/projectZed/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+#setwd("~/Dropbox/projectZed/R/corr-coh-Bn-6hr/") # for Bn 24hr window#
+##setwd("~/Dropbox/projectZed/michal/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+##setwd("~/Dropbox/projectZed/michal/R/corr-coh-vr-24hr/") #
+#
+setwd("~/Dropbox/projectZed/R/corr-coh-vr-24hr/") #
+#
+file_list <- list.files(pattern="corr-coh-vr-20")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}#
+# Need to remove all lines with -999.0#
+rmv = -999.0#
+#
+dataset <- dataset[!(dataset[,4] %in% rmv),]#
+#
+# create a 5x5 scatterplot#
+plot(dataset[,c(4,5,6,7,8)])
+file_list
+# read in the data files#
+rm(list=ls())#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "vr"  #vr, Temp, np#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+#setwd("~Dropbox/projectZed/R/") # this is for whatever just got run#
+#setwd("~Dropbox/projectZed/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+#setwd("~/Dropbox/projectZed/R/corr-coh-Bn-6hr/") # for Bn 24hr window#
+##setwd("~/Dropbox/projectZed/michal/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+##setwd("~/Dropbox/projectZed/michal/R/corr-coh-vr-24hr/") #
+#
+setwd("~/Dropbox/projectZed/R/corr-coh-vr-24hr/") #
+#
+file_list <- list.files(pattern="corr-coh-vr20")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}#
+# Need to remove all lines with -999.0#
+rmv = -999.0#
+#
+dataset <- dataset[!(dataset[,4] %in% rmv),]#
+#
+# create a 5x5 scatterplot#
+plot(dataset[,c(4,5,6,7,8)])
+# read in the data files#
+rm(list=ls())#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "Bn"  #Bn, vr, Temp, np#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+#setwd("~Dropbox/projectZed/R/") # this is for whatever just got run#
+#setwd("~Dropbox/projectZed/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+#setwd("~/Dropbox/projectZed/R/corr-coh-Bn-6hr/") # for Bn 24hr window#
+##setwd("~/Dropbox/projectZed/michal/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+setwd("~/Dropbox/projectZed/michal/R/corr-coh-Bn-24hr/") #
+#
+##setwd("~/Dropbox/projectZed/R/corr-coh-vr-24hr/") #
+#
+#file_list <- list.files(pattern="corr-coh-vr-w24")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}#
+# Need to remove all lines with -999.0#
+rmv = -999.0#
+#
+dataset <- dataset[!(dataset[,4] %in% rmv),]#
+#
+# create a 5x5 scatterplot#
+plot(dataset[,c(4,5,6,7,8)])
+# read in the data files#
+rm(list=ls())#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "Bn"  #Bn, vr, Temp, np#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+#setwd("~Dropbox/projectZed/R/") # this is for whatever just got run#
+#setwd("~Dropbox/projectZed/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+#setwd("~/Dropbox/projectZed/R/corr-coh-Bn-6hr/") # for Bn 24hr window#
+##setwd("~/Dropbox/projectZed/michal/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+setwd("~/Dropbox/projectZed/michal/R/corr-coh-Bn-24hr/") #
+file_list <- list.files(pattern=".csv")#
+##setwd("~/Dropbox/projectZed/R/corr-coh-vr-24hr/") #
+#
+#file_list <- list.files(pattern="corr-coh-vr-w24")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}#
+# Need to remove all lines with -999.0#
+rmv = -999.0#
+#
+dataset <- dataset[!(dataset[,4] %in% rmv),]#
+#
+# create a 5x5 scatterplot#
+plot(dataset[,c(4,5,6,7,8)])
+dim(dataset)
+# read in the data files#
+rm(list=ls())#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "vr"  #Bn, vr, Temp, np#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+#setwd("~Dropbox/projectZed/R/") # this is for whatever just got run#
+#setwd("~Dropbox/projectZed/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+#setwd("~/Dropbox/projectZed/R/corr-coh-Bn-6hr/") # for Bn 24hr window#
+##setwd("~/Dropbox/projectZed/michal/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+setwd("~/Dropbox/projectZed/michal/R/corr-coh-vr-24hr/") #
+file_list <- list.files(pattern=".csv")#
+##setwd("~/Dropbox/projectZed/R/corr-coh-vr-24hr/") #
+#
+#file_list <- list.files(pattern="corr-coh-vr-w24")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}#
+# Need to remove all lines with -999.0#
+rmv = -999.0#
+#
+dataset <- dataset[!(dataset[,4] %in% rmv),]#
+#
+# create a 5x5 scatterplot#
+plot(dataset[,c(4,5,6,7,8)])
+# High Density Scatterplot with Binning#
+x <- dataset$coh#
+y <- dataset$corrPred#
+mtit <- "Hexagonal Binning: Coherency v. Predicted Correlation"#
+xtit <- "Coherency"#
+ytit <- "Predicted Correlation"#
+bin<-hexbin(x, y, xbins=50) #
+plot(bin, main=mtit,xlab=xtit,ylab=ytit)
+pdf(file='../figure7.pdf')#
+plot(dataset[,c(4,5,6,7,8)])#
+dev.off()
+# High Density Scatterplot with Binning#
+x <- dataset$coh#
+y <- dataset$corrPred#
+mtit <- "Hexagonal Binning: Coherency v. Predicted Correlation"#
+xtit <- "Coherency"#
+ytit <- "Predicted Correlation"#
+bin<-hexbin(x, y, xbins=50) #
+plot(bin, main=mtit,xlab=xtit,ylab=ytit)#
+#
+pdf(file='../figure6-vr.pdf')#
+plot(bin,xlab=xtit,ylab=ytit,main=mtit)#
+dev.off()
+# High Density Scatterplot with Binning#
+#
+x <- dataset$mse#
+y <- dataset$mseZero#
+mtit <- "Hexagonal Binning: MSE v. MSE-Zero"#
+xtit <- "MSE"#
+ytit <- "MSE-Zero"#
+x1 <- c(0,20)#
+y1 <- x1#
+xmax = 10 # for Bn #
+if (whvar == "Bn") {#
+	xmax = 10#
+}#
+#
+if (whvar == 'vr') {#
+	xmax = 1e4 #2000#
+}#
+#
+if (whvar == 'Temp') {#
+	xmax = 1e6#
+}#
+#
+if (whvar == 'np') {#
+	xmax = 50#
+}#
+xsub = ((x <= xmax) & (y <= xmax))#
+bin<-hexbin(x[xsub], y[xsub], xbins=50,xbnds=c(0,xmax), ybnds=c(0,xmax)) #
+#
+# nice colour version#
+#
+rf <- colorRampPalette(rev(brewer.pal(11,'Spectral')))#
+plot(bin, main=mtit,xlab=xtit,ylab=ytit,colramp=rf)
+pdf(file='../figure8.pdf')#
+plot(bin, main=mtit,xlab=xtit,ylab=ytit,colramp=rf)#
+dev.off()#
+#
+colCoh = dataset$coh / max(dataset$coh)#
+#
+# plots points with red line slope=1#
+plot(x,y,pch=16,xlim=c(0,xmax),ylim=c(0,xmax),xlab=xtit,ylab=ytit,col = gray(colCoh))#
+abline(0,1,col="red")
+ratioMSE = x/y#
+xr1 = c(0,2.)#
+nbreak = 500#
+#
+if (whvar == "Bn") {#
+	nbreak = 500#
+}#
+#
+if (whvar == 'vr') {#
+	nbreak = 500#
+}#
+#
+hist(ratioMSE,breaks=nbreak,xlab="MSE / MSE-Zero",xlim=xr1,main="Ratio of MSE to MSE-Zero")
+if (whvar == 'vr') {#
+	nbreak = 5000#
+}#
+#
+hist(ratioMSE,breaks=nbreak,xlab="MSE / MSE-Zero",xlim=xr1,main="Ratio of MSE to MSE-Zero")
+if (whvar == 'vr') {#
+	nbreak = 1000#
+}#
+#
+hist(ratioMSE,breaks=nbreak,xlab="MSE / MSE-Zero",xlim=xr1,main="Ratio of MSE to MSE-Zero")
+if (whvar == 'vr') {#
+	nbreak = 500#
+}#
+#
+hist(ratioMSE,breaks=nbreak,xlab="MSE / MSE-Zero",xlim=xr1,main="Ratio of MSE to MSE-Zero")#
+pdf(file='../figure9.pdf')#
+hist(ratioMSE,breaks=nbreak,xlab="MSE / MSE-Zero",xlim=xr1,main="Ratio of MSE to MSE-Zero")#
+dev.off()
+# read in the data files#
+rm(list=ls())#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "Temp"  #Bn, vr, Temp, np#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+#setwd("~Dropbox/projectZed/R/") # this is for whatever just got run#
+#setwd("~Dropbox/projectZed/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+#setwd("~/Dropbox/projectZed/R/corr-coh-Bn-6hr/") # for Bn 24hr window#
+##setwd("~/Dropbox/projectZed/michal/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+## setwd("~/Dropbox/projectZed/michal/R/corr-coh-vr-24hr/")  # for vr 24hr window#
+#
+setwd("~/Dropbox/projectZed/michal/R/corr-coh-Temp-24hr/") #
+file_list <- list.files(pattern=".csv")#
+#
+##setwd("~/Dropbox/projectZed/R/corr-coh-vr-24hr/") #
+#file_list <- list.files(pattern="corr-coh-vr-w24")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}
+range(dataset[,4])
+dim(dataset)
+head(dataset)
+# create a 5x5 scatterplot#
+plot(dataset[,c(4,5,6,7,8)])
+help(na.omit)
+# read in the data files#
+rm(list=ls())#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "Temp"  #Bn, vr, Temp, np#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+#setwd("~Dropbox/projectZed/R/") # this is for whatever just got run#
+#setwd("~Dropbox/projectZed/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+#setwd("~/Dropbox/projectZed/R/corr-coh-Bn-6hr/") # for Bn 24hr window#
+##setwd("~/Dropbox/projectZed/michal/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+## setwd("~/Dropbox/projectZed/michal/R/corr-coh-vr-24hr/")  # for vr 24hr window#
+#
+setwd("~/Dropbox/projectZed/michal/R/corr-coh-Temp-24hr/") #
+file_list <- list.files(pattern=".csv")#
+#
+##setwd("~/Dropbox/projectZed/R/corr-coh-vr-24hr/") #
+#file_list <- list.files(pattern="corr-coh-vr-w24")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}#
+# Need to remove all lines with -999.0#
+#
+if (whvar == 'vr') {#
+rmv = -999.0#
+dataset <- dataset[!(dataset[,4] %in% rmv),]	#
+}#
+if(whvar == 'Temp') {#
+	dataset = na.omit(dataset)#
+}#
+#
+# create a 5x5 scatterplot#
+plot(dataset[,c(4,5,6,7,8)])
+# read in the data files#
+rm(list=ls())#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "vr"  #Bn, vr, Temp, np#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+#setwd("~Dropbox/projectZed/R/") # this is for whatever just got run#
+#setwd("~Dropbox/projectZed/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+#setwd("~/Dropbox/projectZed/R/corr-coh-Bn-6hr/") # for Bn 24hr window#
+##setwd("~/Dropbox/projectZed/michal/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+## setwd("~/Dropbox/projectZed/michal/R/corr-coh-vr-24hr/")  # for vr 24hr window#
+#
+setwd("~/Dropbox/projectZed/michal/R/corr-coh-Temp-24hr/") #
+file_list <- list.files(pattern="corr-coh-vr-2000")#
+#
+##setwd("~/Dropbox/projectZed/R/corr-coh-vr-24hr/") #
+#file_list <- list.files(pattern="corr-coh-vr-w24")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}#
+# Need to remove all lines with -999.0#
+#
+if (whvar == 'vr') {#
+rmv = -999.0#
+dataset <- dataset[!(dataset[,4] %in% rmv),]	#
+}#
+if(whvar == 'Temp') {#
+	dataset = na.omit(dataset)#
+}#
+#
+# create a 5x5 scatterplot#
+plot(dataset[,c(4,5,6,7,8)])
+# read in the data files#
+rm(list=ls())#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "vr"  #Bn, vr, Temp, np#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+#setwd("~Dropbox/projectZed/R/") # this is for whatever just got run#
+#setwd("~Dropbox/projectZed/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+#setwd("~/Dropbox/projectZed/R/corr-coh-Bn-6hr/") # for Bn 24hr window#
+##setwd("~/Dropbox/projectZed/michal/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+## setwd("~/Dropbox/projectZed/michal/R/corr-coh-vr-24hr/")  # for vr 24hr window#
+#
+setwd("~/Dropbox/projectZed/michal/R/corr-coh-Temp-24hr/") #
+file_list <- list.files(pattern="corr-coh-vr-w24-2000")#
+#
+##setwd("~/Dropbox/projectZed/R/corr-coh-vr-24hr/") #
+#file_list <- list.files(pattern="corr-coh-vr-w24")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}#
+# Need to remove all lines with -999.0#
+#
+if (whvar == 'vr') {#
+rmv = -999.0#
+dataset <- dataset[!(dataset[,4] %in% rmv),]	#
+}#
+if(whvar == 'Temp') {#
+	dataset = na.omit(dataset)#
+}#
+#
+# create a 5x5 scatterplot#
+plot(dataset[,c(4,5,6,7,8)])
+file_list
+# read in the data files#
+rm(list=ls())#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "vr"  #Bn, vr, Temp, np#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+#setwd("~Dropbox/projectZed/R/") # this is for whatever just got run#
+#setwd("~Dropbox/projectZed/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+#setwd("~/Dropbox/projectZed/R/corr-coh-Bn-6hr/") # for Bn 24hr window#
+##setwd("~/Dropbox/projectZed/michal/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+## setwd("~/Dropbox/projectZed/michal/R/corr-coh-vr-24hr/")  # for vr 24hr window#
+#
+setwd("~/Dropbox/projectZed/michal/R/corr-coh-vr-24hr/") #
+file_list <- list.files(pattern="corr-coh-vr-w24-2000")#
+#
+##setwd("~/Dropbox/projectZed/R/corr-coh-vr-24hr/") #
+#file_list <- list.files(pattern="corr-coh-vr-w24")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}#
+# Need to remove all lines with -999.0#
+#
+if (whvar == 'vr') {#
+rmv = -999.0#
+dataset <- dataset[!(dataset[,4] %in% rmv),]	#
+}#
+if(whvar == 'Temp') {#
+	dataset = na.omit(dataset)#
+}#
+#
+# create a 5x5 scatterplot#
+plot(dataset[,c(4,5,6,7,8)])
+# read in the data files#
+rm(list=ls())#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "vr"  #Bn, vr, Temp, np#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+#setwd("~Dropbox/projectZed/R/") # this is for whatever just got run#
+#setwd("~Dropbox/projectZed/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+#setwd("~/Dropbox/projectZed/R/corr-coh-Bn-6hr/") # for Bn 24hr window#
+##setwd("~/Dropbox/projectZed/michal/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+## setwd("~/Dropbox/projectZed/michal/R/corr-coh-vr-24hr/")  # for vr 24hr window#
+#
+setwd("~/Dropbox/projectZed/michal/R/corr-coh-vr-24hr/") #
+file_list <- list.files(pattern="corr-coh-vr-w24-2001")#
+#
+##setwd("~/Dropbox/projectZed/R/corr-coh-vr-24hr/") #
+#file_list <- list.files(pattern="corr-coh-vr-w24")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}#
+# Need to remove all lines with -999.0#
+#
+if (whvar == 'vr') {#
+rmv = -999.0#
+dataset <- dataset[!(dataset[,4] %in% rmv),]	#
+}#
+if(whvar == 'Temp') {#
+	dataset = na.omit(dataset)#
+}#
+#
+# create a 5x5 scatterplot#
+plot(dataset[,c(4,5,6,7,8)])
+# read in the data files#
+rm(list=ls())#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "vr"  #Bn, vr, Temp, np#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+#setwd("~Dropbox/projectZed/R/") # this is for whatever just got run#
+#setwd("~Dropbox/projectZed/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+#setwd("~/Dropbox/projectZed/R/corr-coh-Bn-6hr/") # for Bn 24hr window#
+##setwd("~/Dropbox/projectZed/michal/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+## setwd("~/Dropbox/projectZed/michal/R/corr-coh-vr-24hr/")  # for vr 24hr window#
+#
+setwd("~/Dropbox/projectZed/michal/R/corr-coh-vr-24hr/") #
+file_list <- list.files(pattern="corr-coh-vr-w24-2010")#
+#
+##setwd("~/Dropbox/projectZed/R/corr-coh-vr-24hr/") #
+#file_list <- list.files(pattern="corr-coh-vr-w24")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}#
+# Need to remove all lines with -999.0#
+#
+if (whvar == 'vr') {#
+rmv = -999.0#
+dataset <- dataset[!(dataset[,4] %in% rmv),]	#
+}#
+if(whvar == 'Temp') {#
+	dataset = na.omit(dataset)#
+}#
+#
+# create a 5x5 scatterplot#
+plot(dataset[,c(4,5,6,7,8)])
+# read in the data files#
+rm(list=ls())#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "vr"  #Bn, vr, Temp, np#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+#setwd("~Dropbox/projectZed/R/") # this is for whatever just got run#
+#setwd("~Dropbox/projectZed/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+#setwd("~/Dropbox/projectZed/R/corr-coh-Bn-6hr/") # for Bn 24hr window#
+##setwd("~/Dropbox/projectZed/michal/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+## setwd("~/Dropbox/projectZed/michal/R/corr-coh-vr-24hr/")  # for vr 24hr window#
+#
+setwd("~/Dropbox/projectZed/michal/R/corr-coh-vr-24hr/") #
+setwd("~/Dropbox/projectZed/R/corr-coh-vr-6hr/") #
+file_list <- list.files(pattern=".csv")#
+#
+##setwd("~/Dropbox/projectZed/R/corr-coh-vr-24hr/") #
+#file_list <- list.files(pattern="corr-coh-vr-w24")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}#
+# Need to remove all lines with -999.0#
+#
+if (whvar == 'vr') {#
+rmv = -999.0#
+dataset <- dataset[!(dataset[,4] %in% rmv),]	#
+}#
+if(whvar == 'Temp') {#
+	dataset = na.omit(dataset)#
+}#
+#
+# create a 5x5 scatterplot#
+plot(dataset[,c(4,5,6,7,8)])
+# read in the data files#
+rm(list=ls())#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "Temp"  #Bn, vr, Temp, np#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+#setwd("~Dropbox/projectZed/R/") # this is for whatever just got run#
+#setwd("~Dropbox/projectZed/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+#setwd("~/Dropbox/projectZed/R/corr-coh-Bn-6hr/") # for Bn 24hr window#
+##setwd("~/Dropbox/projectZed/michal/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+## setwd("~/Dropbox/projectZed/michal/R/corr-coh-vr-24hr/")  # for vr 24hr window#
+#
+setwd("~/Dropbox/projectZed/michal/R/corr-coh-Temp-24hr/") #
+#
+file_list <- list.files(pattern=".csv")#
+#
+##setwd("~/Dropbox/projectZed/R/corr-coh-vr-6hr/") #
+##setwd("~/Dropbox/projectZed/R/corr-coh-vr-24hr/") #
+#file_list <- list.files(pattern="corr-coh-vr-w24")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}#
+# Need to remove all lines with -999.0#
+#
+if (whvar == 'vr') {#
+rmv = -999.0#
+dataset <- dataset[!(dataset[,4] %in% rmv),]	#
+}#
+if(whvar == 'Temp') {#
+	dataset = na.omit(dataset)#
+}#
+#
+# create a 5x5 scatterplot#
+plot(dataset[,c(4,5,6,7,8)])
+pdf(file='../manuscript-Figures/figure3-Temp.pdf')#
+plot(dataset[,c(4,5,6,7,8)])#
+dev.off()
+# High Density Scatterplot with Binning#
+x <- dataset$coh#
+y <- dataset$corrPred#
+mtit <- "Hexagonal Binning: Coherency v. Predicted Correlation"#
+xtit <- "Coherency"#
+ytit <- "Predicted Correlation"#
+bin<-hexbin(x, y, xbins=50) #
+plot(bin, main=mtit,xlab=xtit,ylab=ytit)
+x <- dataset$mse#
+y <- dataset$mseZero#
+mtit <- "Hexagonal Binning: MSE v. MSE-Zero"#
+xtit <- "MSE"#
+ytit <- "MSE-Zero"#
+x1 <- c(0,20)#
+y1 <- x1#
+xmax = 10 # for Bn #
+if (whvar == "Bn") {#
+	xmax = 10#
+}#
+#
+if (whvar == 'vr') {#
+	xmax = 1e4 #2000#
+}#
+#
+if (whvar == 'Temp') {#
+	xmax = 1e6#
+}#
+#
+if (whvar == 'np') {#
+	xmax = 50#
+}#
+xsub = ((x <= xmax) & (y <= xmax))#
+bin<-hexbin(x[xsub], y[xsub], xbins=50,xbnds=c(0,xmax), ybnds=c(0,xmax)) #
+#
+# nice colour version#
+#
+rf <- colorRampPalette(rev(brewer.pal(11,'Spectral')))#
+plot(bin, main=mtit,xlab=xtit,ylab=ytit,colramp=rf)
+pdf(file='../figure4-Temp.pdf')#
+plot(bin, main=mtit,xlab=xtit,ylab=ytit,colramp=rf)#
+dev.off()
+pdf(file='../manuscript-Figures/figure4-Temp.pdf')#
+plot(bin, main=mtit,xlab=xtit,ylab=ytit,colramp=rf)#
+dev.off()#
+#
+colCoh = dataset$coh / max(dataset$coh)#
+#
+# plots points with red line slope=1#
+plot(x,y,pch=16,xlim=c(0,xmax),ylim=c(0,xmax),xlab=xtit,ylab=ytit,col = gray(colCoh))#
+abline(0,1,col="red")#
+#
+ratioMSE = x/y#
+xr1 = c(0,2.)#
+nbreak = 500#
+#
+if (whvar == "Bn") {#
+	nbreak = 500#
+}#
+#
+if (whvar == 'vr') {#
+	nbreak = 500#
+}#
+#
+hist(ratioMSE,breaks=nbreak,xlab="MSE / MSE-Zero",xlim=xr1,main="Ratio of MSE to MSE-Zero")
+pdf(file='../manuscript-Figures/figure9-Temp.pdf')#
+hist(ratioMSE,breaks=nbreak,xlab="MSE / MSE-Zero",xlim=xr1,main="Ratio of MSE to MSE-Zero")#
+dev.off()
+# High Density Scatterplot with Binning#
+x <- dataset$coh#
+y <- dataset$corrPred#
+mtit <- "Hexagonal Binning: Coherency v. Predicted Correlation"#
+xtit <- "Coherency"#
+ytit <- "Predicted Correlation"#
+bin<-hexbin(x, y, xbins=50) #
+plot(bin, main=mtit,xlab=xtit,ylab=ytit)#
+#
+pdf(file='../manuscript-Figures/figure6-Temp.pdf')#
+plot(bin,xlab=xtit,ylab=ytit,main=mtit)#
+dev.off()
+hist(1./ratioMSE,breaks=nbreak,xlab="MSE-Zero / MSE",xlim=xr1,main="Ratio of MSE-Zero to MSE")
+# read in the data files#
+rm(list=ls())#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "np"  #Bn, vr, Temp, np#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+#setwd("~Dropbox/projectZed/R/") # this is for whatever just got run#
+#setwd("~Dropbox/projectZed/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+#setwd("~/Dropbox/projectZed/R/corr-coh-Bn-6hr/") # for Bn 24hr window#
+##setwd("~/Dropbox/projectZed/michal/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+## setwd("~/Dropbox/projectZed/michal/R/corr-coh-vr-24hr/")  # for vr 24hr window#
+#
+setwd("~/Dropbox/projectZed/michal/R/corr-coh-np-24hr/") #
+#
+file_list <- list.files(pattern=".csv")#
+#
+##setwd("~/Dropbox/projectZed/R/corr-coh-vr-6hr/") #
+##setwd("~/Dropbox/projectZed/R/corr-coh-vr-24hr/") #
+#file_list <- list.files(pattern="corr-coh-vr-w24")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}
+range(dataset[,4])
+# Need to remove all lines with -999.0#
+#
+if (whvar == 'vr' || dataset == 'np') {#
+rmv = -999.0#
+dataset <- dataset[!(dataset[,4] %in% rmv),]	#
+}
+range(dataset[,4])
+range(dataset[,4])
+whvar
+dataset[,4]
+which(dataset[,4] == -999.)
+dataset[713:744,]
+dataset[1457:1488,]
+dataset[1456:1488,]
+# read in the data files#
+rm(list=ls())#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "np"  #Bn, vr, Temp, np#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+#setwd("~Dropbox/projectZed/R/") # this is for whatever just got run#
+#setwd("~Dropbox/projectZed/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+#setwd("~/Dropbox/projectZed/R/corr-coh-Bn-6hr/") # for Bn 24hr window#
+##setwd("~/Dropbox/projectZed/michal/R/corr-coh-Bn-24hr/") # for Bn 24hr window#
+## setwd("~/Dropbox/projectZed/michal/R/corr-coh-vr-24hr/")  # for vr 24hr window#
+#
+setwd("~/Dropbox/projectZed/michal/R/corr-coh-np-24hr/") #
+#
+file_list <- list.files(pattern=".csv")#
+#
+##setwd("~/Dropbox/projectZed/R/corr-coh-vr-6hr/") #
+##setwd("~/Dropbox/projectZed/R/corr-coh-vr-24hr/") #
+#file_list <- list.files(pattern="corr-coh-vr-w24")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}#
+# Need to remove all lines with -999.0#
+#
+if (whvar == 'vr' | dataset == 'np') {#
+rmv = -999.0#
+dataset <- dataset[!(dataset[,4] %in% rmv),]	#
+}
+# Need to remove all lines with -999.0#
+#
+if (whvar == 'vr' || whvar == 'np') {#
+rmv = -999.0#
+dataset <- dataset[!(dataset[,4] %in% rmv),]	#
+}#
+if(whvar == 'Temp') {#
+	dataset = na.omit(dataset)#
+}#
+#
+# create a 5x5 scatterplot#
+plot(dataset[,c(4,5,6,7,8)])
+# create a 5x5 scatterplot#
+plot(dataset[,c(4,5,6,7,8)])#
+#
+pdf(file='../manuscript-Figures/figure3-np.pdf')#
+plot(dataset[,c(4,5,6,7,8)])#
+dev.off()#
+# High Density Scatterplot with Binning#
+x <- dataset$coh#
+y <- dataset$corrPred#
+mtit <- "Hexagonal Binning: Coherency v. Predicted Correlation"#
+xtit <- "Coherency"#
+ytit <- "Predicted Correlation"#
+bin<-hexbin(x, y, xbins=50) #
+plot(bin, main=mtit,xlab=xtit,ylab=ytit)
+pdf(file='../manuscript-Figures/figure6-np.pdf')#
+plot(bin,xlab=xtit,ylab=ytit,main=mtit)#
+dev.off()
+# High Density Scatterplot with Binning#
+#
+x <- dataset$mse#
+y <- dataset$mseZero#
+mtit <- "Hexagonal Binning: MSE v. MSE-Zero"#
+xtit <- "MSE"#
+ytit <- "MSE-Zero"#
+x1 <- c(0,20)#
+y1 <- x1#
+xmax = 10 # for Bn #
+if (whvar == "Bn") {#
+	xmax = 10#
+}#
+#
+if (whvar == 'vr') {#
+	xmax = 1e4 #2000#
+}#
+#
+if (whvar == 'Temp') {#
+	xmax = 1e6#
+}#
+#
+if (whvar == 'np') {#
+	xmax = 50#
+}#
+xsub = ((x <= xmax) & (y <= xmax))#
+bin<-hexbin(x[xsub], y[xsub], xbins=50,xbnds=c(0,xmax), ybnds=c(0,xmax)) #
+#
+# nice colour version#
+#
+rf <- colorRampPalette(rev(brewer.pal(11,'Spectral')))#
+plot(bin, main=mtit,xlab=xtit,ylab=ytit,colramp=rf)
+pdf(file='../manuscript-Figures/figure4-np.pdf')#
+plot(bin, main=mtit,xlab=xtit,ylab=ytit,colramp=rf)#
+dev.off()#
+#
+colCoh = dataset$coh / max(dataset$coh)#
+#
+# plots points with red line slope=1#
+plot(x,y,pch=16,xlim=c(0,xmax),ylim=c(0,xmax),xlab=xtit,ylab=ytit,col = gray(colCoh))#
+abline(0,1,col="red")
+ratioMSE = x/y#
+xr1 = c(0,2.)#
+nbreak = 500#
+#
+if (whvar == "Bn") {#
+	nbreak = 500#
+}#
+#
+if (whvar == 'vr') {#
+	nbreak = 500#
+}#
+#
+hist(ratioMSE,breaks=nbreak,xlab="MSE / MSE-Zero",xlim=xr1,main="Ratio of MSE to MSE-Zero")
+nbreak
+range(ratioMSE)
+ratioMSE = x/y#
+xr1 = c(0,2.)#
+nbreak = 500#
+#
+if (whvar == "Bn") {#
+	nbreak = 500#
+}#
+#
+if (whvar == 'vr') {#
+	nbreak = 500#
+}#
+if (whvar == 'np') {#
+	xr1 = 80#
+}#
+hist(ratioMSE,breaks=nbreak,xlab="MSE / MSE-Zero",xlim=xr1,main="Ratio of MSE to MSE-Zero")
+xr1
+ratioMSE = x/y#
+xr1 = c(0,2.)#
+nbreak = 500#
+#
+if (whvar == "Bn") {#
+	nbreak = 500#
+}#
+#
+if (whvar == 'vr') {#
+	nbreak = 500#
+}#
+if (whvar == 'np') {#
+	xr1 = c(0,80)#
+}#
+hist(ratioMSE,breaks=nbreak,xlab="MSE / MSE-Zero",xlim=xr1,main="Ratio of MSE to MSE-Zero")
+if (whvar == 'np') {#
+	xr1 = c(0,20)#
+	nbreak=100#
+}#
+hist(ratioMSE,breaks=nbreak,xlab="MSE / MSE-Zero",xlim=xr1,main="Ratio of MSE to MSE-Zero")
+if (whvar == 'np') {#
+	xr1 = c(0,10)#
+	nbreak=200#
+}#
+#
+hist(ratioMSE,breaks=nbreak,xlab="MSE / MSE-Zero",xlim=xr1,main="Ratio of MSE to MSE-Zero")
+if (whvar == 'np') {#
+	xr1 = c(0,4)#
+	nbreak=200#
+}#
+#
+hist(ratioMSE,breaks=nbreak,xlab="MSE / MSE-Zero",xlim=xr1,main="Ratio of MSE to MSE-Zero")
+if (whvar == 'np') {#
+	xr1 = c(0,4)#
+	nbreak=500#
+}#
+#
+hist(ratioMSE,breaks=nbreak,xlab="MSE / MSE-Zero",xlim=xr1,main="Ratio of MSE to MSE-Zero")
+ratioMSE = x/y#
+xr1 = c(0,2.)#
+nbreak = 500#
+#
+if (whvar == "Bn") {#
+	nbreak = 500#
+}#
+#
+if (whvar == 'vr') {#
+	nbreak = 500#
+}#
+if (whvar == 'np') {#
+	xr1 = c(0,2)#
+	nbreak=500#
+}#
+#
+hist(ratioMSE,breaks=nbreak,xlab="MSE / MSE-Zero",xlim=xr1,main="Ratio of MSE to MSE-Zero")
+ratioMSE = x/y#
+xr1 = c(0,2.)#
+nbreak = 500#
+#
+if (whvar == "Bn") {#
+	nbreak = 500#
+}#
+#
+if (whvar == 'vr') {#
+	nbreak = 500#
+}#
+if (whvar == 'np') {#
+	xr1 = c(0,2)#
+	nbreak=5000#
+}#
+#
+hist(ratioMSE,breaks=nbreak,xlab="MSE / MSE-Zero",xlim=xr1,main="Ratio of MSE to MSE-Zero")
+pdf(file='../manuscript-Figures/figure9-np.pdf')#
+hist(ratioMSE,breaks=nbreak,xlab="MSE / MSE-Zero",xlim=xr1,main="Ratio of MSE to MSE-Zero")#
+dev.off()
+q()

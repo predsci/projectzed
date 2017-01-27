@@ -1,0 +1,3282 @@
+source("../R/libProjectZed.R")
+resultsMAG <- readCME1Mag()
+dim(resultsMAG)
+ls()
+resultsMAG
+getwd()
+setwd('../R')
+source('libProjectZed.R')
+readData = readMagV_OMNI() # read in the data#
+        ddate = readData$ddate#
+        Bn=readData$Bn#
+        vr = readData$vr#
+        np = readData$np#
+        Temp = readData$Temp
+Br=readData$Br
+Bt=readData$Bt
+tail(Br)
+tail(Bn)
+tail(Bt)
+ymd     = "2014-01-08" # Savani event 1#
+   hhour   = 12#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 40#
+   bmax    = 10
+ymd="2010-10-10"
+hhour=12
+mmin=0
+ssec=0
+wwindow=24
+bmax=20
+# DRIVER ROUTINE#
+#
+library(date)#
+#library(data.table)#
+library(hydroGOF)  #
+library(Hmisc)#
+library(pander)#
+library(caTools) # load necessary libraries#
+library(zoo)#
+library(binhf)#
+library(dtw)
+# set default parameters / turn on various models#
+zero = T # 1#
+psychic = F # 2#
+persistence = F # 3#
+recurrence = F # 4#
+pattrec = T # 5#
+cme1 = F # 6#
+turbulence = F # 7#
+mcmc = F # 8#
+ucsd = F # 9#
+savani = F # 10#
+#
+models = c(zero, psychic, persistence, recurrence, pattrec, cme1, turbulence, mcmc, ucsd, savani)#
+smodels = c("Zero", "Psychic", "Persistence", "Recurrence", "Patt. Rec.", "CME1", "Turbulence", "MCMC", "UCSD", "Savani")
+sc="OMNI"
+symSize = 0.25#
+  bleglower = 0. - bmax/2.#
+  cex1 = 0.6#
+  mlwd = 2#
+  xmin = date1 - wwindow*3600.#
+  xmax = date1 + wwindow*3600.#
+  BnNow = Bn[ddate==date1]#
+  nshift = round(24*27.2753)#
+  BnRecurrence = shift(Bn,nshift)#
+  BnZero = 0.0*Bn#
+  BnPsychic = BnZero  + runif(1,-bmax,bmax)#
+  BnPersistence = Bn*0.0+BnNow#
+  nBn = length(Bn)#
+  Bm = 3.0#
+  BnTurbulence = runif(nBn,-Bm,Bm)#
+  ipred = ((ddate >= date1) & (ddate <= xmax))#
+  isub  = ((ddate >=xmin) & (ddate <= xmax))#
+  imodels = (models == T) #
+ obs51 = 0.0#
+ if (min(Bn[ipred]) < -5.0) {obs51 = 100.}#
+  plot(ddate[isub],Bn[isub],ylim=c(-bmax,bmax),#
+       ylab="Bn (nT)",cex=symSize, xlab="Time (Date)", #
+       xlim=c(xmin,xmax),type="l",xaxt="n")#
+  axis.POSIXct(1,at = seq(xmin,xmax, by = "day"), format = "%m/%d/%y")#
+  #axis.POSIXct(3, at = seq(xmin,xmax, by = "hour",origin=xmin), format = "%H")#
+  lines(c(date1,date1),c(-bmax,bmax),type="l",col="red",lwd=3)#
+  lines(c(min(ddate)-2,max(ddate)+2),c(0,0),type="l",lty=2)#
+  # add in some model predictions:#
+  # Here's the order: psychic,zero,persistence, recurrence,pattrec,cme1,turbulence,mcmc#
+  nipred  = length(Bn[ipred])#
+  cmodels = c("red","blue","green","brown","purple","blue1","magenta","green4","navy","blue4")#
+  corrVec = 0.0*vector("numeric",length(models))#
+  probFor = 0.0*vector("numeric",length(models))#
+  MSE     = 0.0*vector("numeric",length(models))#
+#
+  if (models[5] == T) {#
+    arrPattRec = pattRec(ddate,Bn,date1=date1,wwindow=wwindow,bmax=bmax,plotRealizations=plotRealizations)#
+    meanBnPred = arrPattRec$meanBnPred#
+    BnRealizations = arrPattRec$BnRealizations#
+    nrow = dim(BnRealizations)[1]#
+    ncol = dim(BnRealizations)[2]#
+    probForAll = vector("numeric",ncol)#
+    for (i in 1:(ncol)) {#
+        if (min(BnRealizations[,i]) < -5.0) {probForAll[i] = 100.}     #
+    }#
+#
+    # compute quantiles#
+    quantArr = matrix(0,5,nrow)#
+    for (i in 1:(nrow)) {#
+        quantOne = quantile(BnRealizations[i,])#
+        quantArr[,i] = quantOne#
+    }    #
+    ypoly = c(quantArr[2,],rev(quantArr[4,]))#
+    xpoly = c(ddate[ipred],rev(ddate[ipred]))#
+    if (plotQuantiles=="yes") {polygon(xpoly,ypoly,col=rgb(0, 1, 0,0.3),border=NA)}#
+    points(ddate[ipred],meanBnPred,col=cmodels[5],lwd=mlwd,type="l")#
+    if (plotQuantiles=="yes") {text(xmax-(xmax-xmin)/8.,-bmax,"25/75% Quantiles",cex=cex1,col="green3")}#
+    ##if (plotQuantiles=="yes") {text(xmax-(xmax-xmin)/2.75,-bmax,"25/75% Quantiles",cex=cex1,col="green3")}#
+    corrVec[5] = cor(Bn[ipred], meanBnPred,method="pearson",use="complete")#
+    probFor[5] = sum(probForAll)/ncol#
+    MSE[5] = mse(meanBnPred, Bn[ipred], na.rm=T)#
+  }    #
+#
+if (models[6] == T) {#
+    arrCME1 = readCME1Mag()#
+    ddateCME1 = arrCME1$ddate#
+    BnCME1 = arrCME1$Bn#
+    BnCME1Realizations = arrCME1$BnRealizations#
+    BnCME1_int = approx(as.numeric(ddateCME1),BnCME1,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnCME1_inty = BnCME1_int$y#
+    nrow = dim(BnCME1Realizations)[1]#
+    ncol = dim(BnCME1Realizations)[2]#
+    if (plotRealizations == "yes") {#
+    	for (i in 1:(ncol - 2)) {#
+    		lines(ddateCME1, BnCME1Realizations[, i], type = "l", col = "grey")#
+    	}#
+    }#
+#
+    lines(ddateCME1,BnCME1,type="l",col=cmodels[6],lwd=mlwd)#
+    lines(ddate[ipred],BnCME1_inty,type="l",col=cmodels[6])#
+    # compute quantiles#
+    quantArr = matrix(0,5,nrow)#
+    for (i in 1:(nrow)) {#
+        quantOne = quantile(BnCME1Realizations[i,])#
+        quantArr[,i] = quantOne#
+    }    #
+    ypoly = c(quantArr[2,],rev(quantArr[4,]))#
+    xpoly = c(ddateCME1,rev(ddateCME1))#
+    if (plotQuantiles=="yes") {#
+    	polygon(xpoly,ypoly,col=rgb(0, 1, 0,0.3),border=NA)#
+    	text(xmax-(xmax-xmin)/8.,-bmax,"25/75% Quantiles",cex=cex1,col="green3")#
+    }#
+    corrVec[6] = cor(Bn[ipred],BnCME1_inty,method="pearson",use="complete")#
+    if (min(BnCME1) < -5.0) {probFor[6] = 100.}#
+    MSE[6] = mse(BnCME1_inty, Bn[ipred], na.rm=T)#
+}    #
+#
+  if (models[1] == T) {#
+    lines(ddate[ipred],BnZero[ipred],type="l",col=cmodels[1],lwd=mlwd)#
+    corrVec[1] = cor(Bn[ipred],BnZero[ipred],method="pearson",use="complete")#
+    probFor[1] = 0.0#
+    MSE[1] = mse(BnZero[ipred],Bn[ipred], na.rm=T)#
+  }    #
+#
+  if (models[2] == T) {#
+    lines(ddate[ipred],BnPsychic[ipred],type="l",col=cmodels[2],lwd=mlwd)#
+    corrVec[2] = cor(Bn[ipred],BnPsychic[ipred],method="pearson",use="complete")#
+    if (min(BnPsychic[ipred]) < -5.0) {probFor[2] = 100.}#
+    MSE[2] = mse(BnPsychic[ipred], Bn[ipred], na.rm=T)#
+  }#
+  if (models[3] == T) {#
+    lines(ddate[ipred],BnPersistence[ipred],type="l",col=cmodels[3],lwd=mlwd)#
+    corrVec[3] = cor(Bn[ipred],BnPersistence[ipred],method="pearson",use="complete")#
+    if (min(BnPersistence[ipred]) < -5.0) {probFor[3] = 100.}#
+    MSE[3] = mse(BnPersistence[ipred], Bn[ipred], na.rm=T)#
+  }    #
+  if (models[4] == T) {#
+    lines(ddate[ipred],BnRecurrence[ipred],c(0,0),type="l",col=cmodels[4],lwd=mlwd)#
+    corrVec[4] = cor(Bn[ipred],BnRecurrence[ipred],method="pearson",use="complete")#
+    if (min(na.omit(BnRecurrence[ipred])) < -5.0) {probFor[4] = 100.}#
+    MSE[4] = mse(BnRecurrence[ipred], Bn[ipred], na.rm=T)#
+  }    #
+#
+ if (models[7] == T) {#
+    lines(ddate[ipred],BnTurbulence[ipred],type="l",col=cmodels[7],lwd=mlwd)#
+    corrVec[7] = cor(Bn[ipred],BnTurbulence[ipred],method="pearson",use="complete")#
+    if (min(na.omit(BnTurbulence[ipred])) < -5.0) {probFor[7] = 100.}#
+    MSE[7] = mse(BnTurbulence[ipred],Bn[ipred], na.rm=T)#
+  }    #
+#
+if (models[8] == T) {#
+    arrMCMC = readMCMC()#
+    ddateMCMC = arrMCMC$ddate#
+    BnMCMC = arrMCMC$Bn#
+    BnMCMCRealizations = arrMCMC$BnRealizations#
+    BnMCMC_int = approx(as.numeric(ddateMCMC),BnMCMC,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnMCMC_inty = BnMCMC_int$y#
+    ncol = dim(BnMCMCRealizations)[2]#
+    probForAll = vector("numeric",ncol)#
+    for (i in 1:(ncol-2)) {#
+        if (min(BnMCMCRealizations[10:32,i]) < -5.0) {probForAll[i] = 100.}     #
+    }#
+    if (plotRealizations == "yes") {#
+    	for (i in 1:(ncol - 2)) {#
+    		lines(ddateMCMC, BnMCMCRealizations[, i], type = "l", col = "grey")#
+    	}#
+    }#
+    lines(ddateMCMC,BnMCMC,type="l",col=cmodels[8],lwd=mlwd)#
+    lines(ddate[ipred],BnMCMC_inty,type="l",col=cmodels[8])#
+    corrVec[8] = cor(Bn[ipred],BnMCMC_inty,method="pearson",use="complete")#
+    probFor[8] = sum(probForAll)/ncol#
+    MSE[8] = mse(BnMCMC_inty, Bn[ipred], na.rm=T)#
+# compute probability that a field will be southward for 3 hours during next 24 hours#
+    for (i in 1:(ncol-2)) {#
+        x = (BnMCMCRealizations[,i] < -5)	#
+    } #
+  }    #
+if (models[9] == T) {#
+    arrUCSD = readUCSD()#
+    ddateUCSD = arrUCSD$ddate#
+    BnUCSD = arrUCSD$Bn#
+    BnUCSD_int = approx(as.numeric(ddateUCSD),BnUCSD,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnUCSD_inty = BnUCSD_int$y#
+    lines(ddateUCSD,BnUCSD,type="l",col=cmodels[9],lwd=mlwd)#
+    lines(ddate[ipred],BnUCSD_inty,type="l",col=cmodels[9])#
+    corrVec[9] = cor(Bn[ipred],BnUCSD_inty,method="pearson",use="complete")#
+    if (min(BnUCSD_inty) < -5.0) {probFor[9] = 100.}#
+    MSE[9] = mse(BnUCSD_inty, Bn[ipred], na.rm=T)#
+}    #
+if (models[10] == T) {#
+    arrSavani = readSavani()#
+    ddateSavani = arrSavani$ddate#
+    BnSavani = arrSavani$Bn#
+    BnSavani_int = approx(as.numeric(ddateSavani),BnSavani,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnSavani_inty = BnSavani_int$y#
+    lines(ddateSavani,BnSavani,type="l",col=cmodels[10],lwd=mlwd)#
+    lines(ddate[ipred],BnSavani_inty,type="l",col=cmodels[10])#
+    corrVec[10] = cor(Bn[ipred],BnSavani_inty,method="pearson",use="complete")#
+    if (min(BnSavani) < -5.0) {probFor[10] = 100.}#
+    MSE[10] = mse(BnSavani_inty, Bn[ipred], na.rm=T)#
+}    #
+  skill = (1 - MSE/MSE[1]) ##*100.#
+#
+  lines(ddate[isub], Bn[isub], type = "l") # plot again to overlay other plots#
+  lines(c(date1, date1), c(-bmax, bmax), type = "l", col = "red", lwd = 3)#
+  lines(c(min(ddate) - 2, max(ddate) + 2), c(0, 0), type = "l", lty = 2)#
+  lines(ddate[ipred], -5 + BnZero[ipred], type = "l", lty = 3, col = "red")#
+#
+  legend(xmin, bmax, lty = replicate(length(models[imodels]) + 1, 1), c(sc, smodels[imodels]), lwd = replicate(length(models[imodels]) + 1, 2.5), #
+  text.col = c("black", cmodels[imodels]), col = c("black", cmodels[imodels]), cex = cex1, title = "Observations/Models", title.col = "black")#
+  legend("topright", legend = date1, bty = "n")#
+if (legendOn == T) {#
+  legend(xmin,bleglower,paste(smodels[imodels],": ",format(corrVec[imodels],digits=2),sep=""),text.col=cmodels[imodels],cex=cex1,title="Corr. Coeff.",title.col="black")#
+  legend(xmin+(xmax-xmin)/4.,bleglower,paste(smodels[imodels],": ",format(MSE[imodels],digits=3),sep=""),text.col=cmodels[imodels],cex=cex1,title="MSE",title.col="black")#
+  legend(xmin+(xmax-xmin)/1.95,bleglower,paste(smodels[imodels],": ",format(skill[imodels],digits=2),sep=""),text.col=cmodels[imodels],cex=cex1,#
+  title="Skill Score",title.col="black")#
+  legend(xmin+(xmax-xmin)/1.33333,bleglower,paste(c(smodels[imodels],"Observations"),": ",format(c(probFor[imodels],obs51),digits=3),'%',sep=""),text.col=c(cmodels[imodels],"black"),cex=cex1,#
+  title="Prob.Forecast (>5/1)",title.col="black")#
+}
+date1 = ISOdate(ymd,hhour,mmin,ssec,tz="UTC")
+symSize = 0.25#
+  bleglower = 0. - bmax/2.#
+  cex1 = 0.6#
+  mlwd = 2#
+  xmin = date1 - wwindow*3600.#
+  xmax = date1 + wwindow*3600.#
+  BnNow = Bn[ddate==date1]#
+  nshift = round(24*27.2753)#
+  BnRecurrence = shift(Bn,nshift)#
+  BnZero = 0.0*Bn#
+  BnPsychic = BnZero  + runif(1,-bmax,bmax)#
+  BnPersistence = Bn*0.0+BnNow#
+  nBn = length(Bn)#
+  Bm = 3.0#
+  BnTurbulence = runif(nBn,-Bm,Bm)#
+  ipred = ((ddate >= date1) & (ddate <= xmax))#
+  isub  = ((ddate >=xmin) & (ddate <= xmax))#
+  imodels = (models == T) #
+ obs51 = 0.0#
+ if (min(Bn[ipred]) < -5.0) {obs51 = 100.}#
+  plot(ddate[isub],Bn[isub],ylim=c(-bmax,bmax),#
+       ylab="Bn (nT)",cex=symSize, xlab="Time (Date)", #
+       xlim=c(xmin,xmax),type="l",xaxt="n")#
+  axis.POSIXct(1,at = seq(xmin,xmax, by = "day"), format = "%m/%d/%y")#
+  #axis.POSIXct(3, at = seq(xmin,xmax, by = "hour",origin=xmin), format = "%H")#
+  lines(c(date1,date1),c(-bmax,bmax),type="l",col="red",lwd=3)#
+  lines(c(min(ddate)-2,max(ddate)+2),c(0,0),type="l",lty=2)#
+  # add in some model predictions:#
+  # Here's the order: psychic,zero,persistence, recurrence,pattrec,cme1,turbulence,mcmc#
+  nipred  = length(Bn[ipred])#
+  cmodels = c("red","blue","green","brown","purple","blue1","magenta","green4","navy","blue4")#
+  corrVec = 0.0*vector("numeric",length(models))#
+  probFor = 0.0*vector("numeric",length(models))#
+  MSE     = 0.0*vector("numeric",length(models))#
+#
+  if (models[5] == T) {#
+    arrPattRec = pattRec(ddate,Bn,date1=date1,wwindow=wwindow,bmax=bmax,plotRealizations=plotRealizations)#
+    meanBnPred = arrPattRec$meanBnPred#
+    BnRealizations = arrPattRec$BnRealizations#
+    nrow = dim(BnRealizations)[1]#
+    ncol = dim(BnRealizations)[2]#
+    probForAll = vector("numeric",ncol)#
+    for (i in 1:(ncol)) {#
+        if (min(BnRealizations[,i]) < -5.0) {probForAll[i] = 100.}     #
+    }#
+#
+    # compute quantiles#
+    quantArr = matrix(0,5,nrow)#
+    for (i in 1:(nrow)) {#
+        quantOne = quantile(BnRealizations[i,])#
+        quantArr[,i] = quantOne#
+    }    #
+    ypoly = c(quantArr[2,],rev(quantArr[4,]))#
+    xpoly = c(ddate[ipred],rev(ddate[ipred]))#
+    if (plotQuantiles=="yes") {polygon(xpoly,ypoly,col=rgb(0, 1, 0,0.3),border=NA)}#
+    points(ddate[ipred],meanBnPred,col=cmodels[5],lwd=mlwd,type="l")#
+    if (plotQuantiles=="yes") {text(xmax-(xmax-xmin)/8.,-bmax,"25/75% Quantiles",cex=cex1,col="green3")}#
+    ##if (plotQuantiles=="yes") {text(xmax-(xmax-xmin)/2.75,-bmax,"25/75% Quantiles",cex=cex1,col="green3")}#
+    corrVec[5] = cor(Bn[ipred], meanBnPred,method="pearson",use="complete")#
+    probFor[5] = sum(probForAll)/ncol#
+    MSE[5] = mse(meanBnPred, Bn[ipred], na.rm=T)#
+  }    #
+#
+if (models[6] == T) {#
+    arrCME1 = readCME1Mag()#
+    ddateCME1 = arrCME1$ddate#
+    BnCME1 = arrCME1$Bn#
+    BnCME1Realizations = arrCME1$BnRealizations#
+    BnCME1_int = approx(as.numeric(ddateCME1),BnCME1,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnCME1_inty = BnCME1_int$y#
+    nrow = dim(BnCME1Realizations)[1]#
+    ncol = dim(BnCME1Realizations)[2]#
+    if (plotRealizations == "yes") {#
+    	for (i in 1:(ncol - 2)) {#
+    		lines(ddateCME1, BnCME1Realizations[, i], type = "l", col = "grey")#
+    	}#
+    }#
+#
+    lines(ddateCME1,BnCME1,type="l",col=cmodels[6],lwd=mlwd)#
+    lines(ddate[ipred],BnCME1_inty,type="l",col=cmodels[6])#
+    # compute quantiles#
+    quantArr = matrix(0,5,nrow)#
+    for (i in 1:(nrow)) {#
+        quantOne = quantile(BnCME1Realizations[i,])#
+        quantArr[,i] = quantOne#
+    }    #
+    ypoly = c(quantArr[2,],rev(quantArr[4,]))#
+    xpoly = c(ddateCME1,rev(ddateCME1))#
+    if (plotQuantiles=="yes") {#
+    	polygon(xpoly,ypoly,col=rgb(0, 1, 0,0.3),border=NA)#
+    	text(xmax-(xmax-xmin)/8.,-bmax,"25/75% Quantiles",cex=cex1,col="green3")#
+    }#
+    corrVec[6] = cor(Bn[ipred],BnCME1_inty,method="pearson",use="complete")#
+    if (min(BnCME1) < -5.0) {probFor[6] = 100.}#
+    MSE[6] = mse(BnCME1_inty, Bn[ipred], na.rm=T)#
+}    #
+#
+  if (models[1] == T) {#
+    lines(ddate[ipred],BnZero[ipred],type="l",col=cmodels[1],lwd=mlwd)#
+    corrVec[1] = cor(Bn[ipred],BnZero[ipred],method="pearson",use="complete")#
+    probFor[1] = 0.0#
+    MSE[1] = mse(BnZero[ipred],Bn[ipred], na.rm=T)#
+  }    #
+#
+  if (models[2] == T) {#
+    lines(ddate[ipred],BnPsychic[ipred],type="l",col=cmodels[2],lwd=mlwd)#
+    corrVec[2] = cor(Bn[ipred],BnPsychic[ipred],method="pearson",use="complete")#
+    if (min(BnPsychic[ipred]) < -5.0) {probFor[2] = 100.}#
+    MSE[2] = mse(BnPsychic[ipred], Bn[ipred], na.rm=T)#
+  }#
+  if (models[3] == T) {#
+    lines(ddate[ipred],BnPersistence[ipred],type="l",col=cmodels[3],lwd=mlwd)#
+    corrVec[3] = cor(Bn[ipred],BnPersistence[ipred],method="pearson",use="complete")#
+    if (min(BnPersistence[ipred]) < -5.0) {probFor[3] = 100.}#
+    MSE[3] = mse(BnPersistence[ipred], Bn[ipred], na.rm=T)#
+  }    #
+  if (models[4] == T) {#
+    lines(ddate[ipred],BnRecurrence[ipred],c(0,0),type="l",col=cmodels[4],lwd=mlwd)#
+    corrVec[4] = cor(Bn[ipred],BnRecurrence[ipred],method="pearson",use="complete")#
+    if (min(na.omit(BnRecurrence[ipred])) < -5.0) {probFor[4] = 100.}#
+    MSE[4] = mse(BnRecurrence[ipred], Bn[ipred], na.rm=T)#
+  }    #
+#
+ if (models[7] == T) {#
+    lines(ddate[ipred],BnTurbulence[ipred],type="l",col=cmodels[7],lwd=mlwd)#
+    corrVec[7] = cor(Bn[ipred],BnTurbulence[ipred],method="pearson",use="complete")#
+    if (min(na.omit(BnTurbulence[ipred])) < -5.0) {probFor[7] = 100.}#
+    MSE[7] = mse(BnTurbulence[ipred],Bn[ipred], na.rm=T)#
+  }    #
+#
+if (models[8] == T) {#
+    arrMCMC = readMCMC()#
+    ddateMCMC = arrMCMC$ddate#
+    BnMCMC = arrMCMC$Bn#
+    BnMCMCRealizations = arrMCMC$BnRealizations#
+    BnMCMC_int = approx(as.numeric(ddateMCMC),BnMCMC,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnMCMC_inty = BnMCMC_int$y#
+    ncol = dim(BnMCMCRealizations)[2]#
+    probForAll = vector("numeric",ncol)#
+    for (i in 1:(ncol-2)) {#
+        if (min(BnMCMCRealizations[10:32,i]) < -5.0) {probForAll[i] = 100.}     #
+    }#
+    if (plotRealizations == "yes") {#
+    	for (i in 1:(ncol - 2)) {#
+    		lines(ddateMCMC, BnMCMCRealizations[, i], type = "l", col = "grey")#
+    	}#
+    }#
+    lines(ddateMCMC,BnMCMC,type="l",col=cmodels[8],lwd=mlwd)#
+    lines(ddate[ipred],BnMCMC_inty,type="l",col=cmodels[8])#
+    corrVec[8] = cor(Bn[ipred],BnMCMC_inty,method="pearson",use="complete")#
+    probFor[8] = sum(probForAll)/ncol#
+    MSE[8] = mse(BnMCMC_inty, Bn[ipred], na.rm=T)#
+# compute probability that a field will be southward for 3 hours during next 24 hours#
+    for (i in 1:(ncol-2)) {#
+        x = (BnMCMCRealizations[,i] < -5)	#
+    } #
+  }    #
+if (models[9] == T) {#
+    arrUCSD = readUCSD()#
+    ddateUCSD = arrUCSD$ddate#
+    BnUCSD = arrUCSD$Bn#
+    BnUCSD_int = approx(as.numeric(ddateUCSD),BnUCSD,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnUCSD_inty = BnUCSD_int$y#
+    lines(ddateUCSD,BnUCSD,type="l",col=cmodels[9],lwd=mlwd)#
+    lines(ddate[ipred],BnUCSD_inty,type="l",col=cmodels[9])#
+    corrVec[9] = cor(Bn[ipred],BnUCSD_inty,method="pearson",use="complete")#
+    if (min(BnUCSD_inty) < -5.0) {probFor[9] = 100.}#
+    MSE[9] = mse(BnUCSD_inty, Bn[ipred], na.rm=T)#
+}    #
+if (models[10] == T) {#
+    arrSavani = readSavani()#
+    ddateSavani = arrSavani$ddate#
+    BnSavani = arrSavani$Bn#
+    BnSavani_int = approx(as.numeric(ddateSavani),BnSavani,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnSavani_inty = BnSavani_int$y#
+    lines(ddateSavani,BnSavani,type="l",col=cmodels[10],lwd=mlwd)#
+    lines(ddate[ipred],BnSavani_inty,type="l",col=cmodels[10])#
+    corrVec[10] = cor(Bn[ipred],BnSavani_inty,method="pearson",use="complete")#
+    if (min(BnSavani) < -5.0) {probFor[10] = 100.}#
+    MSE[10] = mse(BnSavani_inty, Bn[ipred], na.rm=T)#
+}    #
+  skill = (1 - MSE/MSE[1]) ##*100.#
+#
+  lines(ddate[isub], Bn[isub], type = "l") # plot again to overlay other plots#
+  lines(c(date1, date1), c(-bmax, bmax), type = "l", col = "red", lwd = 3)#
+  lines(c(min(ddate) - 2, max(ddate) + 2), c(0, 0), type = "l", lty = 2)#
+  lines(ddate[ipred], -5 + BnZero[ipred], type = "l", lty = 3, col = "red")#
+#
+  legend(xmin, bmax, lty = replicate(length(models[imodels]) + 1, 1), c(sc, smodels[imodels]), lwd = replicate(length(models[imodels]) + 1, 2.5), #
+  text.col = c("black", cmodels[imodels]), col = c("black", cmodels[imodels]), cex = cex1, title = "Observations/Models", title.col = "black")#
+  legend("topright", legend = date1, bty = "n")#
+if (legendOn == T) {#
+  legend(xmin,bleglower,paste(smodels[imodels],": ",format(corrVec[imodels],digits=2),sep=""),text.col=cmodels[imodels],cex=cex1,title="Corr. Coeff.",title.col="black")#
+  legend(xmin+(xmax-xmin)/4.,bleglower,paste(smodels[imodels],": ",format(MSE[imodels],digits=3),sep=""),text.col=cmodels[imodels],cex=cex1,title="MSE",title.col="black")#
+  legend(xmin+(xmax-xmin)/1.95,bleglower,paste(smodels[imodels],": ",format(skill[imodels],digits=2),sep=""),text.col=cmodels[imodels],cex=cex1,#
+  title="Skill Score",title.col="black")#
+  legend(xmin+(xmax-xmin)/1.33333,bleglower,paste(c(smodels[imodels],"Observations"),": ",format(c(probFor[imodels],obs51),digits=3),'%',sep=""),text.col=c(cmodels[imodels],"black"),cex=cex1,#
+  title="Prob.Forecast (>5/1)",title.col="black")#
+}
+legendOn=T
+symSize = 0.25#
+  bleglower = 0. - bmax/2.#
+  cex1 = 0.6#
+  mlwd = 2#
+  xmin = date1 - wwindow*3600.#
+  xmax = date1 + wwindow*3600.#
+  BnNow = Bn[ddate==date1]#
+  nshift = round(24*27.2753)#
+  BnRecurrence = shift(Bn,nshift)#
+  BnZero = 0.0*Bn#
+  BnPsychic = BnZero  + runif(1,-bmax,bmax)#
+  BnPersistence = Bn*0.0+BnNow#
+  nBn = length(Bn)#
+  Bm = 3.0#
+  BnTurbulence = runif(nBn,-Bm,Bm)#
+  ipred = ((ddate >= date1) & (ddate <= xmax))#
+  isub  = ((ddate >=xmin) & (ddate <= xmax))#
+  imodels = (models == T) #
+ obs51 = 0.0#
+ if (min(Bn[ipred]) < -5.0) {obs51 = 100.}#
+  plot(ddate[isub],Bn[isub],ylim=c(-bmax,bmax),#
+       ylab="Bn (nT)",cex=symSize, xlab="Time (Date)", #
+       xlim=c(xmin,xmax),type="l",xaxt="n")#
+  axis.POSIXct(1,at = seq(xmin,xmax, by = "day"), format = "%m/%d/%y")#
+  #axis.POSIXct(3, at = seq(xmin,xmax, by = "hour",origin=xmin), format = "%H")#
+  lines(c(date1,date1),c(-bmax,bmax),type="l",col="red",lwd=3)#
+  lines(c(min(ddate)-2,max(ddate)+2),c(0,0),type="l",lty=2)#
+  # add in some model predictions:#
+  # Here's the order: psychic,zero,persistence, recurrence,pattrec,cme1,turbulence,mcmc#
+  nipred  = length(Bn[ipred])#
+  cmodels = c("red","blue","green","brown","purple","blue1","magenta","green4","navy","blue4")#
+  corrVec = 0.0*vector("numeric",length(models))#
+  probFor = 0.0*vector("numeric",length(models))#
+  MSE     = 0.0*vector("numeric",length(models))#
+#
+  if (models[5] == T) {#
+    arrPattRec = pattRec(ddate,Bn,date1=date1,wwindow=wwindow,bmax=bmax,plotRealizations=plotRealizations)#
+    meanBnPred = arrPattRec$meanBnPred#
+    BnRealizations = arrPattRec$BnRealizations#
+    nrow = dim(BnRealizations)[1]#
+    ncol = dim(BnRealizations)[2]#
+    probForAll = vector("numeric",ncol)#
+    for (i in 1:(ncol)) {#
+        if (min(BnRealizations[,i]) < -5.0) {probForAll[i] = 100.}     #
+    }#
+#
+    # compute quantiles#
+    quantArr = matrix(0,5,nrow)#
+    for (i in 1:(nrow)) {#
+        quantOne = quantile(BnRealizations[i,])#
+        quantArr[,i] = quantOne#
+    }    #
+    ypoly = c(quantArr[2,],rev(quantArr[4,]))#
+    xpoly = c(ddate[ipred],rev(ddate[ipred]))#
+    if (plotQuantiles=="yes") {polygon(xpoly,ypoly,col=rgb(0, 1, 0,0.3),border=NA)}#
+    points(ddate[ipred],meanBnPred,col=cmodels[5],lwd=mlwd,type="l")#
+    if (plotQuantiles=="yes") {text(xmax-(xmax-xmin)/8.,-bmax,"25/75% Quantiles",cex=cex1,col="green3")}#
+    ##if (plotQuantiles=="yes") {text(xmax-(xmax-xmin)/2.75,-bmax,"25/75% Quantiles",cex=cex1,col="green3")}#
+    corrVec[5] = cor(Bn[ipred], meanBnPred,method="pearson",use="complete")#
+    probFor[5] = sum(probForAll)/ncol#
+    MSE[5] = mse(meanBnPred, Bn[ipred], na.rm=T)#
+  }    #
+#
+if (models[6] == T) {#
+    arrCME1 = readCME1Mag()#
+    ddateCME1 = arrCME1$ddate#
+    BnCME1 = arrCME1$Bn#
+    BnCME1Realizations = arrCME1$BnRealizations#
+    BnCME1_int = approx(as.numeric(ddateCME1),BnCME1,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnCME1_inty = BnCME1_int$y#
+    nrow = dim(BnCME1Realizations)[1]#
+    ncol = dim(BnCME1Realizations)[2]#
+    if (plotRealizations == "yes") {#
+    	for (i in 1:(ncol - 2)) {#
+    		lines(ddateCME1, BnCME1Realizations[, i], type = "l", col = "grey")#
+    	}#
+    }#
+#
+    lines(ddateCME1,BnCME1,type="l",col=cmodels[6],lwd=mlwd)#
+    lines(ddate[ipred],BnCME1_inty,type="l",col=cmodels[6])#
+    # compute quantiles#
+    quantArr = matrix(0,5,nrow)#
+    for (i in 1:(nrow)) {#
+        quantOne = quantile(BnCME1Realizations[i,])#
+        quantArr[,i] = quantOne#
+    }    #
+    ypoly = c(quantArr[2,],rev(quantArr[4,]))#
+    xpoly = c(ddateCME1,rev(ddateCME1))#
+    if (plotQuantiles=="yes") {#
+    	polygon(xpoly,ypoly,col=rgb(0, 1, 0,0.3),border=NA)#
+    	text(xmax-(xmax-xmin)/8.,-bmax,"25/75% Quantiles",cex=cex1,col="green3")#
+    }#
+    corrVec[6] = cor(Bn[ipred],BnCME1_inty,method="pearson",use="complete")#
+    if (min(BnCME1) < -5.0) {probFor[6] = 100.}#
+    MSE[6] = mse(BnCME1_inty, Bn[ipred], na.rm=T)#
+}    #
+#
+  if (models[1] == T) {#
+    lines(ddate[ipred],BnZero[ipred],type="l",col=cmodels[1],lwd=mlwd)#
+    corrVec[1] = cor(Bn[ipred],BnZero[ipred],method="pearson",use="complete")#
+    probFor[1] = 0.0#
+    MSE[1] = mse(BnZero[ipred],Bn[ipred], na.rm=T)#
+  }    #
+#
+  if (models[2] == T) {#
+    lines(ddate[ipred],BnPsychic[ipred],type="l",col=cmodels[2],lwd=mlwd)#
+    corrVec[2] = cor(Bn[ipred],BnPsychic[ipred],method="pearson",use="complete")#
+    if (min(BnPsychic[ipred]) < -5.0) {probFor[2] = 100.}#
+    MSE[2] = mse(BnPsychic[ipred], Bn[ipred], na.rm=T)#
+  }#
+  if (models[3] == T) {#
+    lines(ddate[ipred],BnPersistence[ipred],type="l",col=cmodels[3],lwd=mlwd)#
+    corrVec[3] = cor(Bn[ipred],BnPersistence[ipred],method="pearson",use="complete")#
+    if (min(BnPersistence[ipred]) < -5.0) {probFor[3] = 100.}#
+    MSE[3] = mse(BnPersistence[ipred], Bn[ipred], na.rm=T)#
+  }    #
+  if (models[4] == T) {#
+    lines(ddate[ipred],BnRecurrence[ipred],c(0,0),type="l",col=cmodels[4],lwd=mlwd)#
+    corrVec[4] = cor(Bn[ipred],BnRecurrence[ipred],method="pearson",use="complete")#
+    if (min(na.omit(BnRecurrence[ipred])) < -5.0) {probFor[4] = 100.}#
+    MSE[4] = mse(BnRecurrence[ipred], Bn[ipred], na.rm=T)#
+  }    #
+#
+ if (models[7] == T) {#
+    lines(ddate[ipred],BnTurbulence[ipred],type="l",col=cmodels[7],lwd=mlwd)#
+    corrVec[7] = cor(Bn[ipred],BnTurbulence[ipred],method="pearson",use="complete")#
+    if (min(na.omit(BnTurbulence[ipred])) < -5.0) {probFor[7] = 100.}#
+    MSE[7] = mse(BnTurbulence[ipred],Bn[ipred], na.rm=T)#
+  }    #
+#
+if (models[8] == T) {#
+    arrMCMC = readMCMC()#
+    ddateMCMC = arrMCMC$ddate#
+    BnMCMC = arrMCMC$Bn#
+    BnMCMCRealizations = arrMCMC$BnRealizations#
+    BnMCMC_int = approx(as.numeric(ddateMCMC),BnMCMC,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnMCMC_inty = BnMCMC_int$y#
+    ncol = dim(BnMCMCRealizations)[2]#
+    probForAll = vector("numeric",ncol)#
+    for (i in 1:(ncol-2)) {#
+        if (min(BnMCMCRealizations[10:32,i]) < -5.0) {probForAll[i] = 100.}     #
+    }#
+    if (plotRealizations == "yes") {#
+    	for (i in 1:(ncol - 2)) {#
+    		lines(ddateMCMC, BnMCMCRealizations[, i], type = "l", col = "grey")#
+    	}#
+    }#
+    lines(ddateMCMC,BnMCMC,type="l",col=cmodels[8],lwd=mlwd)#
+    lines(ddate[ipred],BnMCMC_inty,type="l",col=cmodels[8])#
+    corrVec[8] = cor(Bn[ipred],BnMCMC_inty,method="pearson",use="complete")#
+    probFor[8] = sum(probForAll)/ncol#
+    MSE[8] = mse(BnMCMC_inty, Bn[ipred], na.rm=T)#
+# compute probability that a field will be southward for 3 hours during next 24 hours#
+    for (i in 1:(ncol-2)) {#
+        x = (BnMCMCRealizations[,i] < -5)	#
+    } #
+  }    #
+if (models[9] == T) {#
+    arrUCSD = readUCSD()#
+    ddateUCSD = arrUCSD$ddate#
+    BnUCSD = arrUCSD$Bn#
+    BnUCSD_int = approx(as.numeric(ddateUCSD),BnUCSD,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnUCSD_inty = BnUCSD_int$y#
+    lines(ddateUCSD,BnUCSD,type="l",col=cmodels[9],lwd=mlwd)#
+    lines(ddate[ipred],BnUCSD_inty,type="l",col=cmodels[9])#
+    corrVec[9] = cor(Bn[ipred],BnUCSD_inty,method="pearson",use="complete")#
+    if (min(BnUCSD_inty) < -5.0) {probFor[9] = 100.}#
+    MSE[9] = mse(BnUCSD_inty, Bn[ipred], na.rm=T)#
+}    #
+if (models[10] == T) {#
+    arrSavani = readSavani()#
+    ddateSavani = arrSavani$ddate#
+    BnSavani = arrSavani$Bn#
+    BnSavani_int = approx(as.numeric(ddateSavani),BnSavani,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnSavani_inty = BnSavani_int$y#
+    lines(ddateSavani,BnSavani,type="l",col=cmodels[10],lwd=mlwd)#
+    lines(ddate[ipred],BnSavani_inty,type="l",col=cmodels[10])#
+    corrVec[10] = cor(Bn[ipred],BnSavani_inty,method="pearson",use="complete")#
+    if (min(BnSavani) < -5.0) {probFor[10] = 100.}#
+    MSE[10] = mse(BnSavani_inty, Bn[ipred], na.rm=T)#
+}    #
+  skill = (1 - MSE/MSE[1]) ##*100.#
+#
+  lines(ddate[isub], Bn[isub], type = "l") # plot again to overlay other plots#
+  lines(c(date1, date1), c(-bmax, bmax), type = "l", col = "red", lwd = 3)#
+  lines(c(min(ddate) - 2, max(ddate) + 2), c(0, 0), type = "l", lty = 2)#
+  lines(ddate[ipred], -5 + BnZero[ipred], type = "l", lty = 3, col = "red")#
+#
+  legend(xmin, bmax, lty = replicate(length(models[imodels]) + 1, 1), c(sc, smodels[imodels]), lwd = replicate(length(models[imodels]) + 1, 2.5), #
+  text.col = c("black", cmodels[imodels]), col = c("black", cmodels[imodels]), cex = cex1, title = "Observations/Models", title.col = "black")#
+  legend("topright", legend = date1, bty = "n")#
+if (legendOn == T) {#
+  legend(xmin,bleglower,paste(smodels[imodels],": ",format(corrVec[imodels],digits=2),sep=""),text.col=cmodels[imodels],cex=cex1,title="Corr. Coeff.",title.col="black")#
+  legend(xmin+(xmax-xmin)/4.,bleglower,paste(smodels[imodels],": ",format(MSE[imodels],digits=3),sep=""),text.col=cmodels[imodels],cex=cex1,title="MSE",title.col="black")#
+  legend(xmin+(xmax-xmin)/1.95,bleglower,paste(smodels[imodels],": ",format(skill[imodels],digits=2),sep=""),text.col=cmodels[imodels],cex=cex1,#
+  title="Skill Score",title.col="black")#
+  legend(xmin+(xmax-xmin)/1.33333,bleglower,paste(c(smodels[imodels],"Observations"),": ",format(c(probFor[imodels],obs51),digits=3),'%',sep=""),text.col=c(cmodels[imodels],"black"),cex=cex1,#
+  title="Prob.Forecast (>5/1)",title.col="black")#
+}
+plotReallizations=T
+symSize = 0.25#
+  bleglower = 0. - bmax/2.#
+  cex1 = 0.6#
+  mlwd = 2#
+  xmin = date1 - wwindow*3600.#
+  xmax = date1 + wwindow*3600.#
+  BnNow = Bn[ddate==date1]#
+  nshift = round(24*27.2753)#
+  BnRecurrence = shift(Bn,nshift)#
+  BnZero = 0.0*Bn#
+  BnPsychic = BnZero  + runif(1,-bmax,bmax)#
+  BnPersistence = Bn*0.0+BnNow#
+  nBn = length(Bn)#
+  Bm = 3.0#
+  BnTurbulence = runif(nBn,-Bm,Bm)#
+  ipred = ((ddate >= date1) & (ddate <= xmax))#
+  isub  = ((ddate >=xmin) & (ddate <= xmax))#
+  imodels = (models == T) #
+ obs51 = 0.0#
+ if (min(Bn[ipred]) < -5.0) {obs51 = 100.}#
+  plot(ddate[isub],Bn[isub],ylim=c(-bmax,bmax),#
+       ylab="Bn (nT)",cex=symSize, xlab="Time (Date)", #
+       xlim=c(xmin,xmax),type="l",xaxt="n")#
+  axis.POSIXct(1,at = seq(xmin,xmax, by = "day"), format = "%m/%d/%y")#
+  #axis.POSIXct(3, at = seq(xmin,xmax, by = "hour",origin=xmin), format = "%H")#
+  lines(c(date1,date1),c(-bmax,bmax),type="l",col="red",lwd=3)#
+  lines(c(min(ddate)-2,max(ddate)+2),c(0,0),type="l",lty=2)#
+  # add in some model predictions:#
+  # Here's the order: psychic,zero,persistence, recurrence,pattrec,cme1,turbulence,mcmc#
+  nipred  = length(Bn[ipred])#
+  cmodels = c("red","blue","green","brown","purple","blue1","magenta","green4","navy","blue4")#
+  corrVec = 0.0*vector("numeric",length(models))#
+  probFor = 0.0*vector("numeric",length(models))#
+  MSE     = 0.0*vector("numeric",length(models))#
+#
+  if (models[5] == T) {#
+    arrPattRec = pattRec(ddate,Bn,date1=date1,wwindow=wwindow,bmax=bmax,plotRealizations=plotRealizations)#
+    meanBnPred = arrPattRec$meanBnPred#
+    BnRealizations = arrPattRec$BnRealizations#
+    nrow = dim(BnRealizations)[1]#
+    ncol = dim(BnRealizations)[2]#
+    probForAll = vector("numeric",ncol)#
+    for (i in 1:(ncol)) {#
+        if (min(BnRealizations[,i]) < -5.0) {probForAll[i] = 100.}     #
+    }#
+#
+    # compute quantiles#
+    quantArr = matrix(0,5,nrow)#
+    for (i in 1:(nrow)) {#
+        quantOne = quantile(BnRealizations[i,])#
+        quantArr[,i] = quantOne#
+    }    #
+    ypoly = c(quantArr[2,],rev(quantArr[4,]))#
+    xpoly = c(ddate[ipred],rev(ddate[ipred]))#
+    if (plotQuantiles=="yes") {polygon(xpoly,ypoly,col=rgb(0, 1, 0,0.3),border=NA)}#
+    points(ddate[ipred],meanBnPred,col=cmodels[5],lwd=mlwd,type="l")#
+    if (plotQuantiles=="yes") {text(xmax-(xmax-xmin)/8.,-bmax,"25/75% Quantiles",cex=cex1,col="green3")}#
+    ##if (plotQuantiles=="yes") {text(xmax-(xmax-xmin)/2.75,-bmax,"25/75% Quantiles",cex=cex1,col="green3")}#
+    corrVec[5] = cor(Bn[ipred], meanBnPred,method="pearson",use="complete")#
+    probFor[5] = sum(probForAll)/ncol#
+    MSE[5] = mse(meanBnPred, Bn[ipred], na.rm=T)#
+  }    #
+#
+if (models[6] == T) {#
+    arrCME1 = readCME1Mag()#
+    ddateCME1 = arrCME1$ddate#
+    BnCME1 = arrCME1$Bn#
+    BnCME1Realizations = arrCME1$BnRealizations#
+    BnCME1_int = approx(as.numeric(ddateCME1),BnCME1,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnCME1_inty = BnCME1_int$y#
+    nrow = dim(BnCME1Realizations)[1]#
+    ncol = dim(BnCME1Realizations)[2]#
+    if (plotRealizations == "yes") {#
+    	for (i in 1:(ncol - 2)) {#
+    		lines(ddateCME1, BnCME1Realizations[, i], type = "l", col = "grey")#
+    	}#
+    }#
+#
+    lines(ddateCME1,BnCME1,type="l",col=cmodels[6],lwd=mlwd)#
+    lines(ddate[ipred],BnCME1_inty,type="l",col=cmodels[6])#
+    # compute quantiles#
+    quantArr = matrix(0,5,nrow)#
+    for (i in 1:(nrow)) {#
+        quantOne = quantile(BnCME1Realizations[i,])#
+        quantArr[,i] = quantOne#
+    }    #
+    ypoly = c(quantArr[2,],rev(quantArr[4,]))#
+    xpoly = c(ddateCME1,rev(ddateCME1))#
+    if (plotQuantiles=="yes") {#
+    	polygon(xpoly,ypoly,col=rgb(0, 1, 0,0.3),border=NA)#
+    	text(xmax-(xmax-xmin)/8.,-bmax,"25/75% Quantiles",cex=cex1,col="green3")#
+    }#
+    corrVec[6] = cor(Bn[ipred],BnCME1_inty,method="pearson",use="complete")#
+    if (min(BnCME1) < -5.0) {probFor[6] = 100.}#
+    MSE[6] = mse(BnCME1_inty, Bn[ipred], na.rm=T)#
+}    #
+#
+  if (models[1] == T) {#
+    lines(ddate[ipred],BnZero[ipred],type="l",col=cmodels[1],lwd=mlwd)#
+    corrVec[1] = cor(Bn[ipred],BnZero[ipred],method="pearson",use="complete")#
+    probFor[1] = 0.0#
+    MSE[1] = mse(BnZero[ipred],Bn[ipred], na.rm=T)#
+  }    #
+#
+  if (models[2] == T) {#
+    lines(ddate[ipred],BnPsychic[ipred],type="l",col=cmodels[2],lwd=mlwd)#
+    corrVec[2] = cor(Bn[ipred],BnPsychic[ipred],method="pearson",use="complete")#
+    if (min(BnPsychic[ipred]) < -5.0) {probFor[2] = 100.}#
+    MSE[2] = mse(BnPsychic[ipred], Bn[ipred], na.rm=T)#
+  }#
+  if (models[3] == T) {#
+    lines(ddate[ipred],BnPersistence[ipred],type="l",col=cmodels[3],lwd=mlwd)#
+    corrVec[3] = cor(Bn[ipred],BnPersistence[ipred],method="pearson",use="complete")#
+    if (min(BnPersistence[ipred]) < -5.0) {probFor[3] = 100.}#
+    MSE[3] = mse(BnPersistence[ipred], Bn[ipred], na.rm=T)#
+  }    #
+  if (models[4] == T) {#
+    lines(ddate[ipred],BnRecurrence[ipred],c(0,0),type="l",col=cmodels[4],lwd=mlwd)#
+    corrVec[4] = cor(Bn[ipred],BnRecurrence[ipred],method="pearson",use="complete")#
+    if (min(na.omit(BnRecurrence[ipred])) < -5.0) {probFor[4] = 100.}#
+    MSE[4] = mse(BnRecurrence[ipred], Bn[ipred], na.rm=T)#
+  }    #
+#
+ if (models[7] == T) {#
+    lines(ddate[ipred],BnTurbulence[ipred],type="l",col=cmodels[7],lwd=mlwd)#
+    corrVec[7] = cor(Bn[ipred],BnTurbulence[ipred],method="pearson",use="complete")#
+    if (min(na.omit(BnTurbulence[ipred])) < -5.0) {probFor[7] = 100.}#
+    MSE[7] = mse(BnTurbulence[ipred],Bn[ipred], na.rm=T)#
+  }    #
+#
+if (models[8] == T) {#
+    arrMCMC = readMCMC()#
+    ddateMCMC = arrMCMC$ddate#
+    BnMCMC = arrMCMC$Bn#
+    BnMCMCRealizations = arrMCMC$BnRealizations#
+    BnMCMC_int = approx(as.numeric(ddateMCMC),BnMCMC,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnMCMC_inty = BnMCMC_int$y#
+    ncol = dim(BnMCMCRealizations)[2]#
+    probForAll = vector("numeric",ncol)#
+    for (i in 1:(ncol-2)) {#
+        if (min(BnMCMCRealizations[10:32,i]) < -5.0) {probForAll[i] = 100.}     #
+    }#
+    if (plotRealizations == "yes") {#
+    	for (i in 1:(ncol - 2)) {#
+    		lines(ddateMCMC, BnMCMCRealizations[, i], type = "l", col = "grey")#
+    	}#
+    }#
+    lines(ddateMCMC,BnMCMC,type="l",col=cmodels[8],lwd=mlwd)#
+    lines(ddate[ipred],BnMCMC_inty,type="l",col=cmodels[8])#
+    corrVec[8] = cor(Bn[ipred],BnMCMC_inty,method="pearson",use="complete")#
+    probFor[8] = sum(probForAll)/ncol#
+    MSE[8] = mse(BnMCMC_inty, Bn[ipred], na.rm=T)#
+# compute probability that a field will be southward for 3 hours during next 24 hours#
+    for (i in 1:(ncol-2)) {#
+        x = (BnMCMCRealizations[,i] < -5)	#
+    } #
+  }    #
+if (models[9] == T) {#
+    arrUCSD = readUCSD()#
+    ddateUCSD = arrUCSD$ddate#
+    BnUCSD = arrUCSD$Bn#
+    BnUCSD_int = approx(as.numeric(ddateUCSD),BnUCSD,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnUCSD_inty = BnUCSD_int$y#
+    lines(ddateUCSD,BnUCSD,type="l",col=cmodels[9],lwd=mlwd)#
+    lines(ddate[ipred],BnUCSD_inty,type="l",col=cmodels[9])#
+    corrVec[9] = cor(Bn[ipred],BnUCSD_inty,method="pearson",use="complete")#
+    if (min(BnUCSD_inty) < -5.0) {probFor[9] = 100.}#
+    MSE[9] = mse(BnUCSD_inty, Bn[ipred], na.rm=T)#
+}    #
+if (models[10] == T) {#
+    arrSavani = readSavani()#
+    ddateSavani = arrSavani$ddate#
+    BnSavani = arrSavani$Bn#
+    BnSavani_int = approx(as.numeric(ddateSavani),BnSavani,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnSavani_inty = BnSavani_int$y#
+    lines(ddateSavani,BnSavani,type="l",col=cmodels[10],lwd=mlwd)#
+    lines(ddate[ipred],BnSavani_inty,type="l",col=cmodels[10])#
+    corrVec[10] = cor(Bn[ipred],BnSavani_inty,method="pearson",use="complete")#
+    if (min(BnSavani) < -5.0) {probFor[10] = 100.}#
+    MSE[10] = mse(BnSavani_inty, Bn[ipred], na.rm=T)#
+}    #
+  skill = (1 - MSE/MSE[1]) ##*100.#
+#
+  lines(ddate[isub], Bn[isub], type = "l") # plot again to overlay other plots#
+  lines(c(date1, date1), c(-bmax, bmax), type = "l", col = "red", lwd = 3)#
+  lines(c(min(ddate) - 2, max(ddate) + 2), c(0, 0), type = "l", lty = 2)#
+  lines(ddate[ipred], -5 + BnZero[ipred], type = "l", lty = 3, col = "red")#
+#
+  legend(xmin, bmax, lty = replicate(length(models[imodels]) + 1, 1), c(sc, smodels[imodels]), lwd = replicate(length(models[imodels]) + 1, 2.5), #
+  text.col = c("black", cmodels[imodels]), col = c("black", cmodels[imodels]), cex = cex1, title = "Observations/Models", title.col = "black")#
+  legend("topright", legend = date1, bty = "n")#
+if (legendOn == T) {#
+  legend(xmin,bleglower,paste(smodels[imodels],": ",format(corrVec[imodels],digits=2),sep=""),text.col=cmodels[imodels],cex=cex1,title="Corr. Coeff.",title.col="black")#
+  legend(xmin+(xmax-xmin)/4.,bleglower,paste(smodels[imodels],": ",format(MSE[imodels],digits=3),sep=""),text.col=cmodels[imodels],cex=cex1,title="MSE",title.col="black")#
+  legend(xmin+(xmax-xmin)/1.95,bleglower,paste(smodels[imodels],": ",format(skill[imodels],digits=2),sep=""),text.col=cmodels[imodels],cex=cex1,#
+  title="Skill Score",title.col="black")#
+  legend(xmin+(xmax-xmin)/1.33333,bleglower,paste(c(smodels[imodels],"Observations"),": ",format(c(probFor[imodels],obs51),digits=3),'%',sep=""),text.col=c(cmodels[imodels],"black"),cex=cex1,#
+  title="Prob.Forecast (>5/1)",title.col="black")#
+}
+plotReallizations='yes'
+symSize = 0.25#
+  bleglower = 0. - bmax/2.#
+  cex1 = 0.6#
+  mlwd = 2#
+  xmin = date1 - wwindow*3600.#
+  xmax = date1 + wwindow*3600.#
+  BnNow = Bn[ddate==date1]#
+  nshift = round(24*27.2753)#
+  BnRecurrence = shift(Bn,nshift)#
+  BnZero = 0.0*Bn#
+  BnPsychic = BnZero  + runif(1,-bmax,bmax)#
+  BnPersistence = Bn*0.0+BnNow#
+  nBn = length(Bn)#
+  Bm = 3.0#
+  BnTurbulence = runif(nBn,-Bm,Bm)#
+  ipred = ((ddate >= date1) & (ddate <= xmax))#
+  isub  = ((ddate >=xmin) & (ddate <= xmax))#
+  imodels = (models == T) #
+ obs51 = 0.0#
+ if (min(Bn[ipred]) < -5.0) {obs51 = 100.}#
+  plot(ddate[isub],Bn[isub],ylim=c(-bmax,bmax),#
+       ylab="Bn (nT)",cex=symSize, xlab="Time (Date)", #
+       xlim=c(xmin,xmax),type="l",xaxt="n")#
+  axis.POSIXct(1,at = seq(xmin,xmax, by = "day"), format = "%m/%d/%y")#
+  #axis.POSIXct(3, at = seq(xmin,xmax, by = "hour",origin=xmin), format = "%H")#
+  lines(c(date1,date1),c(-bmax,bmax),type="l",col="red",lwd=3)#
+  lines(c(min(ddate)-2,max(ddate)+2),c(0,0),type="l",lty=2)#
+  # add in some model predictions:#
+  # Here's the order: psychic,zero,persistence, recurrence,pattrec,cme1,turbulence,mcmc#
+  nipred  = length(Bn[ipred])#
+  cmodels = c("red","blue","green","brown","purple","blue1","magenta","green4","navy","blue4")#
+  corrVec = 0.0*vector("numeric",length(models))#
+  probFor = 0.0*vector("numeric",length(models))#
+  MSE     = 0.0*vector("numeric",length(models))#
+#
+  if (models[5] == T) {#
+    arrPattRec = pattRec(ddate,Bn,date1=date1,wwindow=wwindow,bmax=bmax,plotRealizations=plotRealizations)#
+    meanBnPred = arrPattRec$meanBnPred#
+    BnRealizations = arrPattRec$BnRealizations#
+    nrow = dim(BnRealizations)[1]#
+    ncol = dim(BnRealizations)[2]#
+    probForAll = vector("numeric",ncol)#
+    for (i in 1:(ncol)) {#
+        if (min(BnRealizations[,i]) < -5.0) {probForAll[i] = 100.}     #
+    }#
+#
+    # compute quantiles#
+    quantArr = matrix(0,5,nrow)#
+    for (i in 1:(nrow)) {#
+        quantOne = quantile(BnRealizations[i,])#
+        quantArr[,i] = quantOne#
+    }    #
+    ypoly = c(quantArr[2,],rev(quantArr[4,]))#
+    xpoly = c(ddate[ipred],rev(ddate[ipred]))#
+    if (plotQuantiles=="yes") {polygon(xpoly,ypoly,col=rgb(0, 1, 0,0.3),border=NA)}#
+    points(ddate[ipred],meanBnPred,col=cmodels[5],lwd=mlwd,type="l")#
+    if (plotQuantiles=="yes") {text(xmax-(xmax-xmin)/8.,-bmax,"25/75% Quantiles",cex=cex1,col="green3")}#
+    ##if (plotQuantiles=="yes") {text(xmax-(xmax-xmin)/2.75,-bmax,"25/75% Quantiles",cex=cex1,col="green3")}#
+    corrVec[5] = cor(Bn[ipred], meanBnPred,method="pearson",use="complete")#
+    probFor[5] = sum(probForAll)/ncol#
+    MSE[5] = mse(meanBnPred, Bn[ipred], na.rm=T)#
+  }    #
+#
+if (models[6] == T) {#
+    arrCME1 = readCME1Mag()#
+    ddateCME1 = arrCME1$ddate#
+    BnCME1 = arrCME1$Bn#
+    BnCME1Realizations = arrCME1$BnRealizations#
+    BnCME1_int = approx(as.numeric(ddateCME1),BnCME1,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnCME1_inty = BnCME1_int$y#
+    nrow = dim(BnCME1Realizations)[1]#
+    ncol = dim(BnCME1Realizations)[2]#
+    if (plotRealizations == "yes") {#
+    	for (i in 1:(ncol - 2)) {#
+    		lines(ddateCME1, BnCME1Realizations[, i], type = "l", col = "grey")#
+    	}#
+    }#
+#
+    lines(ddateCME1,BnCME1,type="l",col=cmodels[6],lwd=mlwd)#
+    lines(ddate[ipred],BnCME1_inty,type="l",col=cmodels[6])#
+    # compute quantiles#
+    quantArr = matrix(0,5,nrow)#
+    for (i in 1:(nrow)) {#
+        quantOne = quantile(BnCME1Realizations[i,])#
+        quantArr[,i] = quantOne#
+    }    #
+    ypoly = c(quantArr[2,],rev(quantArr[4,]))#
+    xpoly = c(ddateCME1,rev(ddateCME1))#
+    if (plotQuantiles=="yes") {#
+    	polygon(xpoly,ypoly,col=rgb(0, 1, 0,0.3),border=NA)#
+    	text(xmax-(xmax-xmin)/8.,-bmax,"25/75% Quantiles",cex=cex1,col="green3")#
+    }#
+    corrVec[6] = cor(Bn[ipred],BnCME1_inty,method="pearson",use="complete")#
+    if (min(BnCME1) < -5.0) {probFor[6] = 100.}#
+    MSE[6] = mse(BnCME1_inty, Bn[ipred], na.rm=T)#
+}    #
+#
+  if (models[1] == T) {#
+    lines(ddate[ipred],BnZero[ipred],type="l",col=cmodels[1],lwd=mlwd)#
+    corrVec[1] = cor(Bn[ipred],BnZero[ipred],method="pearson",use="complete")#
+    probFor[1] = 0.0#
+    MSE[1] = mse(BnZero[ipred],Bn[ipred], na.rm=T)#
+  }    #
+#
+  if (models[2] == T) {#
+    lines(ddate[ipred],BnPsychic[ipred],type="l",col=cmodels[2],lwd=mlwd)#
+    corrVec[2] = cor(Bn[ipred],BnPsychic[ipred],method="pearson",use="complete")#
+    if (min(BnPsychic[ipred]) < -5.0) {probFor[2] = 100.}#
+    MSE[2] = mse(BnPsychic[ipred], Bn[ipred], na.rm=T)#
+  }#
+  if (models[3] == T) {#
+    lines(ddate[ipred],BnPersistence[ipred],type="l",col=cmodels[3],lwd=mlwd)#
+    corrVec[3] = cor(Bn[ipred],BnPersistence[ipred],method="pearson",use="complete")#
+    if (min(BnPersistence[ipred]) < -5.0) {probFor[3] = 100.}#
+    MSE[3] = mse(BnPersistence[ipred], Bn[ipred], na.rm=T)#
+  }    #
+  if (models[4] == T) {#
+    lines(ddate[ipred],BnRecurrence[ipred],c(0,0),type="l",col=cmodels[4],lwd=mlwd)#
+    corrVec[4] = cor(Bn[ipred],BnRecurrence[ipred],method="pearson",use="complete")#
+    if (min(na.omit(BnRecurrence[ipred])) < -5.0) {probFor[4] = 100.}#
+    MSE[4] = mse(BnRecurrence[ipred], Bn[ipred], na.rm=T)#
+  }    #
+#
+ if (models[7] == T) {#
+    lines(ddate[ipred],BnTurbulence[ipred],type="l",col=cmodels[7],lwd=mlwd)#
+    corrVec[7] = cor(Bn[ipred],BnTurbulence[ipred],method="pearson",use="complete")#
+    if (min(na.omit(BnTurbulence[ipred])) < -5.0) {probFor[7] = 100.}#
+    MSE[7] = mse(BnTurbulence[ipred],Bn[ipred], na.rm=T)#
+  }    #
+#
+if (models[8] == T) {#
+    arrMCMC = readMCMC()#
+    ddateMCMC = arrMCMC$ddate#
+    BnMCMC = arrMCMC$Bn#
+    BnMCMCRealizations = arrMCMC$BnRealizations#
+    BnMCMC_int = approx(as.numeric(ddateMCMC),BnMCMC,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnMCMC_inty = BnMCMC_int$y#
+    ncol = dim(BnMCMCRealizations)[2]#
+    probForAll = vector("numeric",ncol)#
+    for (i in 1:(ncol-2)) {#
+        if (min(BnMCMCRealizations[10:32,i]) < -5.0) {probForAll[i] = 100.}     #
+    }#
+    if (plotRealizations == "yes") {#
+    	for (i in 1:(ncol - 2)) {#
+    		lines(ddateMCMC, BnMCMCRealizations[, i], type = "l", col = "grey")#
+    	}#
+    }#
+    lines(ddateMCMC,BnMCMC,type="l",col=cmodels[8],lwd=mlwd)#
+    lines(ddate[ipred],BnMCMC_inty,type="l",col=cmodels[8])#
+    corrVec[8] = cor(Bn[ipred],BnMCMC_inty,method="pearson",use="complete")#
+    probFor[8] = sum(probForAll)/ncol#
+    MSE[8] = mse(BnMCMC_inty, Bn[ipred], na.rm=T)#
+# compute probability that a field will be southward for 3 hours during next 24 hours#
+    for (i in 1:(ncol-2)) {#
+        x = (BnMCMCRealizations[,i] < -5)	#
+    } #
+  }    #
+if (models[9] == T) {#
+    arrUCSD = readUCSD()#
+    ddateUCSD = arrUCSD$ddate#
+    BnUCSD = arrUCSD$Bn#
+    BnUCSD_int = approx(as.numeric(ddateUCSD),BnUCSD,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnUCSD_inty = BnUCSD_int$y#
+    lines(ddateUCSD,BnUCSD,type="l",col=cmodels[9],lwd=mlwd)#
+    lines(ddate[ipred],BnUCSD_inty,type="l",col=cmodels[9])#
+    corrVec[9] = cor(Bn[ipred],BnUCSD_inty,method="pearson",use="complete")#
+    if (min(BnUCSD_inty) < -5.0) {probFor[9] = 100.}#
+    MSE[9] = mse(BnUCSD_inty, Bn[ipred], na.rm=T)#
+}    #
+if (models[10] == T) {#
+    arrSavani = readSavani()#
+    ddateSavani = arrSavani$ddate#
+    BnSavani = arrSavani$Bn#
+    BnSavani_int = approx(as.numeric(ddateSavani),BnSavani,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnSavani_inty = BnSavani_int$y#
+    lines(ddateSavani,BnSavani,type="l",col=cmodels[10],lwd=mlwd)#
+    lines(ddate[ipred],BnSavani_inty,type="l",col=cmodels[10])#
+    corrVec[10] = cor(Bn[ipred],BnSavani_inty,method="pearson",use="complete")#
+    if (min(BnSavani) < -5.0) {probFor[10] = 100.}#
+    MSE[10] = mse(BnSavani_inty, Bn[ipred], na.rm=T)#
+}    #
+  skill = (1 - MSE/MSE[1]) ##*100.#
+#
+  lines(ddate[isub], Bn[isub], type = "l") # plot again to overlay other plots#
+  lines(c(date1, date1), c(-bmax, bmax), type = "l", col = "red", lwd = 3)#
+  lines(c(min(ddate) - 2, max(ddate) + 2), c(0, 0), type = "l", lty = 2)#
+  lines(ddate[ipred], -5 + BnZero[ipred], type = "l", lty = 3, col = "red")#
+#
+  legend(xmin, bmax, lty = replicate(length(models[imodels]) + 1, 1), c(sc, smodels[imodels]), lwd = replicate(length(models[imodels]) + 1, 2.5), #
+  text.col = c("black", cmodels[imodels]), col = c("black", cmodels[imodels]), cex = cex1, title = "Observations/Models", title.col = "black")#
+  legend("topright", legend = date1, bty = "n")#
+if (legendOn == T) {#
+  legend(xmin,bleglower,paste(smodels[imodels],": ",format(corrVec[imodels],digits=2),sep=""),text.col=cmodels[imodels],cex=cex1,title="Corr. Coeff.",title.col="black")#
+  legend(xmin+(xmax-xmin)/4.,bleglower,paste(smodels[imodels],": ",format(MSE[imodels],digits=3),sep=""),text.col=cmodels[imodels],cex=cex1,title="MSE",title.col="black")#
+  legend(xmin+(xmax-xmin)/1.95,bleglower,paste(smodels[imodels],": ",format(skill[imodels],digits=2),sep=""),text.col=cmodels[imodels],cex=cex1,#
+  title="Skill Score",title.col="black")#
+  legend(xmin+(xmax-xmin)/1.33333,bleglower,paste(c(smodels[imodels],"Observations"),": ",format(c(probFor[imodels],obs51),digits=3),'%',sep=""),text.col=c(cmodels[imodels],"black"),cex=cex1,#
+  title="Prob.Forecast (>5/1)",title.col="black")#
+}
+dn      = wwindow/2#
+#
+# rather than removing the NA's, interpolate over them: #
+Bn  = na.approx(Bn,na.rm=F)#
+#
+ntot    = length(Bn)#
+n1 = min((1:ntot)[ddate==date1])#
+#
+eucDist = Bn*0.0 + NA#
+#
+x1   = Bn[(n1-2*dn):n1]#
+#
+## ensure that the data we scan can be used for a window prediction forward - that is we have data for (n1-2*dn)+wwindow#
+#
+for (i in (1+dn):(n1-2*dn)) {	#
+	x2 = Bn[(i-dn):(i+dn)]#
+	tmp = (x2-x1) * (x2-x1)#
+	eucDist[i] = sqrt(sum(tmp)) #
+	#eucDist[i] = dist(rbind(x1,x2),method="euclidean") # The above is almost x10 faster#
+}#
+#
+eucDistRaw = eucDist#
+eucDist[eucDist == 0] = 999999#
+eucDist[is.na(eucDist)] = 999999#
+npatt = 50 # find top npatt locations#
+orderEucDist = order(eucDist,method='radix')#
+#
+## In the case of cor need to order in decreasing and repalce 999 with -999 above#
+##orderEucDist = order(eucDist,method='radix',decreasing=TRUE)#
+#
+meanBnPred = rep(0.0,(1+2*dn))#
+BnRealizations = matrix(0,length(meanBnPred),npatt)#
+#
+for (j in 1:npatt) {#
+	iEuc = orderEucDist[j]#
+	meanBnPred = Bn[(iEuc+dn):(iEuc+3*dn)] + meanBnPred#
+	BnRealizations[,j] = Bn[(iEuc+dn):(iEuc+3*dn)]#
+}#
+#
+meanBnPred = meanBnPred/npatt#
+#
+if (plotRealizations == "yes") {#
+	for (j in 1:npatt) {#
+		iEuc = orderEucDist[j]#
+		lines(ddate[(n1 - dn * 2):(n1 + dn * 2)], BnRealizations[, j], col = "grey", type = "l")#
+	}#
+}
+plotRealizations='yes'
+symSize = 0.25#
+  bleglower = 0. - bmax/2.#
+  cex1 = 0.6#
+  mlwd = 2#
+  xmin = date1 - wwindow*3600.#
+  xmax = date1 + wwindow*3600.#
+  BnNow = Bn[ddate==date1]#
+  nshift = round(24*27.2753)#
+  BnRecurrence = shift(Bn,nshift)#
+  BnZero = 0.0*Bn#
+  BnPsychic = BnZero  + runif(1,-bmax,bmax)#
+  BnPersistence = Bn*0.0+BnNow#
+  nBn = length(Bn)#
+  Bm = 3.0#
+  BnTurbulence = runif(nBn,-Bm,Bm)#
+  ipred = ((ddate >= date1) & (ddate <= xmax))#
+  isub  = ((ddate >=xmin) & (ddate <= xmax))#
+  imodels = (models == T) #
+ obs51 = 0.0#
+ if (min(Bn[ipred]) < -5.0) {obs51 = 100.}#
+  plot(ddate[isub],Bn[isub],ylim=c(-bmax,bmax),#
+       ylab="Bn (nT)",cex=symSize, xlab="Time (Date)", #
+       xlim=c(xmin,xmax),type="l",xaxt="n")#
+  axis.POSIXct(1,at = seq(xmin,xmax, by = "day"), format = "%m/%d/%y")#
+  #axis.POSIXct(3, at = seq(xmin,xmax, by = "hour",origin=xmin), format = "%H")#
+  lines(c(date1,date1),c(-bmax,bmax),type="l",col="red",lwd=3)#
+  lines(c(min(ddate)-2,max(ddate)+2),c(0,0),type="l",lty=2)#
+  # add in some model predictions:#
+  # Here's the order: psychic,zero,persistence, recurrence,pattrec,cme1,turbulence,mcmc#
+  nipred  = length(Bn[ipred])#
+  cmodels = c("red","blue","green","brown","purple","blue1","magenta","green4","navy","blue4")#
+  corrVec = 0.0*vector("numeric",length(models))#
+  probFor = 0.0*vector("numeric",length(models))#
+  MSE     = 0.0*vector("numeric",length(models))#
+#
+  if (models[5] == T) {#
+    arrPattRec = pattRec(ddate,Bn,date1=date1,wwindow=wwindow,bmax=bmax,plotRealizations=plotRealizations)#
+    meanBnPred = arrPattRec$meanBnPred#
+    BnRealizations = arrPattRec$BnRealizations#
+    nrow = dim(BnRealizations)[1]#
+    ncol = dim(BnRealizations)[2]#
+    probForAll = vector("numeric",ncol)#
+    for (i in 1:(ncol)) {#
+        if (min(BnRealizations[,i]) < -5.0) {probForAll[i] = 100.}     #
+    }#
+#
+    # compute quantiles#
+    quantArr = matrix(0,5,nrow)#
+    for (i in 1:(nrow)) {#
+        quantOne = quantile(BnRealizations[i,])#
+        quantArr[,i] = quantOne#
+    }    #
+    ypoly = c(quantArr[2,],rev(quantArr[4,]))#
+    xpoly = c(ddate[ipred],rev(ddate[ipred]))#
+    if (plotQuantiles=="yes") {polygon(xpoly,ypoly,col=rgb(0, 1, 0,0.3),border=NA)}#
+    points(ddate[ipred],meanBnPred,col=cmodels[5],lwd=mlwd,type="l")#
+    if (plotQuantiles=="yes") {text(xmax-(xmax-xmin)/8.,-bmax,"25/75% Quantiles",cex=cex1,col="green3")}#
+    ##if (plotQuantiles=="yes") {text(xmax-(xmax-xmin)/2.75,-bmax,"25/75% Quantiles",cex=cex1,col="green3")}#
+    corrVec[5] = cor(Bn[ipred], meanBnPred,method="pearson",use="complete")#
+    probFor[5] = sum(probForAll)/ncol#
+    MSE[5] = mse(meanBnPred, Bn[ipred], na.rm=T)#
+  }    #
+#
+if (models[6] == T) {#
+    arrCME1 = readCME1Mag()#
+    ddateCME1 = arrCME1$ddate#
+    BnCME1 = arrCME1$Bn#
+    BnCME1Realizations = arrCME1$BnRealizations#
+    BnCME1_int = approx(as.numeric(ddateCME1),BnCME1,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnCME1_inty = BnCME1_int$y#
+    nrow = dim(BnCME1Realizations)[1]#
+    ncol = dim(BnCME1Realizations)[2]#
+    if (plotRealizations == "yes") {#
+    	for (i in 1:(ncol - 2)) {#
+    		lines(ddateCME1, BnCME1Realizations[, i], type = "l", col = "grey")#
+    	}#
+    }#
+#
+    lines(ddateCME1,BnCME1,type="l",col=cmodels[6],lwd=mlwd)#
+    lines(ddate[ipred],BnCME1_inty,type="l",col=cmodels[6])#
+    # compute quantiles#
+    quantArr = matrix(0,5,nrow)#
+    for (i in 1:(nrow)) {#
+        quantOne = quantile(BnCME1Realizations[i,])#
+        quantArr[,i] = quantOne#
+    }    #
+    ypoly = c(quantArr[2,],rev(quantArr[4,]))#
+    xpoly = c(ddateCME1,rev(ddateCME1))#
+    if (plotQuantiles=="yes") {#
+    	polygon(xpoly,ypoly,col=rgb(0, 1, 0,0.3),border=NA)#
+    	text(xmax-(xmax-xmin)/8.,-bmax,"25/75% Quantiles",cex=cex1,col="green3")#
+    }#
+    corrVec[6] = cor(Bn[ipred],BnCME1_inty,method="pearson",use="complete")#
+    if (min(BnCME1) < -5.0) {probFor[6] = 100.}#
+    MSE[6] = mse(BnCME1_inty, Bn[ipred], na.rm=T)#
+}    #
+#
+  if (models[1] == T) {#
+    lines(ddate[ipred],BnZero[ipred],type="l",col=cmodels[1],lwd=mlwd)#
+    corrVec[1] = cor(Bn[ipred],BnZero[ipred],method="pearson",use="complete")#
+    probFor[1] = 0.0#
+    MSE[1] = mse(BnZero[ipred],Bn[ipred], na.rm=T)#
+  }    #
+#
+  if (models[2] == T) {#
+    lines(ddate[ipred],BnPsychic[ipred],type="l",col=cmodels[2],lwd=mlwd)#
+    corrVec[2] = cor(Bn[ipred],BnPsychic[ipred],method="pearson",use="complete")#
+    if (min(BnPsychic[ipred]) < -5.0) {probFor[2] = 100.}#
+    MSE[2] = mse(BnPsychic[ipred], Bn[ipred], na.rm=T)#
+  }#
+  if (models[3] == T) {#
+    lines(ddate[ipred],BnPersistence[ipred],type="l",col=cmodels[3],lwd=mlwd)#
+    corrVec[3] = cor(Bn[ipred],BnPersistence[ipred],method="pearson",use="complete")#
+    if (min(BnPersistence[ipred]) < -5.0) {probFor[3] = 100.}#
+    MSE[3] = mse(BnPersistence[ipred], Bn[ipred], na.rm=T)#
+  }    #
+  if (models[4] == T) {#
+    lines(ddate[ipred],BnRecurrence[ipred],c(0,0),type="l",col=cmodels[4],lwd=mlwd)#
+    corrVec[4] = cor(Bn[ipred],BnRecurrence[ipred],method="pearson",use="complete")#
+    if (min(na.omit(BnRecurrence[ipred])) < -5.0) {probFor[4] = 100.}#
+    MSE[4] = mse(BnRecurrence[ipred], Bn[ipred], na.rm=T)#
+  }    #
+#
+ if (models[7] == T) {#
+    lines(ddate[ipred],BnTurbulence[ipred],type="l",col=cmodels[7],lwd=mlwd)#
+    corrVec[7] = cor(Bn[ipred],BnTurbulence[ipred],method="pearson",use="complete")#
+    if (min(na.omit(BnTurbulence[ipred])) < -5.0) {probFor[7] = 100.}#
+    MSE[7] = mse(BnTurbulence[ipred],Bn[ipred], na.rm=T)#
+  }    #
+#
+if (models[8] == T) {#
+    arrMCMC = readMCMC()#
+    ddateMCMC = arrMCMC$ddate#
+    BnMCMC = arrMCMC$Bn#
+    BnMCMCRealizations = arrMCMC$BnRealizations#
+    BnMCMC_int = approx(as.numeric(ddateMCMC),BnMCMC,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnMCMC_inty = BnMCMC_int$y#
+    ncol = dim(BnMCMCRealizations)[2]#
+    probForAll = vector("numeric",ncol)#
+    for (i in 1:(ncol-2)) {#
+        if (min(BnMCMCRealizations[10:32,i]) < -5.0) {probForAll[i] = 100.}     #
+    }#
+    if (plotRealizations == "yes") {#
+    	for (i in 1:(ncol - 2)) {#
+    		lines(ddateMCMC, BnMCMCRealizations[, i], type = "l", col = "grey")#
+    	}#
+    }#
+    lines(ddateMCMC,BnMCMC,type="l",col=cmodels[8],lwd=mlwd)#
+    lines(ddate[ipred],BnMCMC_inty,type="l",col=cmodels[8])#
+    corrVec[8] = cor(Bn[ipred],BnMCMC_inty,method="pearson",use="complete")#
+    probFor[8] = sum(probForAll)/ncol#
+    MSE[8] = mse(BnMCMC_inty, Bn[ipred], na.rm=T)#
+# compute probability that a field will be southward for 3 hours during next 24 hours#
+    for (i in 1:(ncol-2)) {#
+        x = (BnMCMCRealizations[,i] < -5)	#
+    } #
+  }    #
+if (models[9] == T) {#
+    arrUCSD = readUCSD()#
+    ddateUCSD = arrUCSD$ddate#
+    BnUCSD = arrUCSD$Bn#
+    BnUCSD_int = approx(as.numeric(ddateUCSD),BnUCSD,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnUCSD_inty = BnUCSD_int$y#
+    lines(ddateUCSD,BnUCSD,type="l",col=cmodels[9],lwd=mlwd)#
+    lines(ddate[ipred],BnUCSD_inty,type="l",col=cmodels[9])#
+    corrVec[9] = cor(Bn[ipred],BnUCSD_inty,method="pearson",use="complete")#
+    if (min(BnUCSD_inty) < -5.0) {probFor[9] = 100.}#
+    MSE[9] = mse(BnUCSD_inty, Bn[ipred], na.rm=T)#
+}    #
+if (models[10] == T) {#
+    arrSavani = readSavani()#
+    ddateSavani = arrSavani$ddate#
+    BnSavani = arrSavani$Bn#
+    BnSavani_int = approx(as.numeric(ddateSavani),BnSavani,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnSavani_inty = BnSavani_int$y#
+    lines(ddateSavani,BnSavani,type="l",col=cmodels[10],lwd=mlwd)#
+    lines(ddate[ipred],BnSavani_inty,type="l",col=cmodels[10])#
+    corrVec[10] = cor(Bn[ipred],BnSavani_inty,method="pearson",use="complete")#
+    if (min(BnSavani) < -5.0) {probFor[10] = 100.}#
+    MSE[10] = mse(BnSavani_inty, Bn[ipred], na.rm=T)#
+}    #
+  skill = (1 - MSE/MSE[1]) ##*100.#
+#
+  lines(ddate[isub], Bn[isub], type = "l") # plot again to overlay other plots#
+  lines(c(date1, date1), c(-bmax, bmax), type = "l", col = "red", lwd = 3)#
+  lines(c(min(ddate) - 2, max(ddate) + 2), c(0, 0), type = "l", lty = 2)#
+  lines(ddate[ipred], -5 + BnZero[ipred], type = "l", lty = 3, col = "red")#
+#
+  legend(xmin, bmax, lty = replicate(length(models[imodels]) + 1, 1), c(sc, smodels[imodels]), lwd = replicate(length(models[imodels]) + 1, 2.5), #
+  text.col = c("black", cmodels[imodels]), col = c("black", cmodels[imodels]), cex = cex1, title = "Observations/Models", title.col = "black")#
+  legend("topright", legend = date1, bty = "n")#
+if (legendOn == T) {#
+  legend(xmin,bleglower,paste(smodels[imodels],": ",format(corrVec[imodels],digits=2),sep=""),text.col=cmodels[imodels],cex=cex1,title="Corr. Coeff.",title.col="black")#
+  legend(xmin+(xmax-xmin)/4.,bleglower,paste(smodels[imodels],": ",format(MSE[imodels],digits=3),sep=""),text.col=cmodels[imodels],cex=cex1,title="MSE",title.col="black")#
+  legend(xmin+(xmax-xmin)/1.95,bleglower,paste(smodels[imodels],": ",format(skill[imodels],digits=2),sep=""),text.col=cmodels[imodels],cex=cex1,#
+  title="Skill Score",title.col="black")#
+  legend(xmin+(xmax-xmin)/1.33333,bleglower,paste(c(smodels[imodels],"Observations"),": ",format(c(probFor[imodels],obs51),digits=3),'%',sep=""),text.col=c(cmodels[imodels],"black"),cex=cex1,#
+  title="Prob.Forecast (>5/1)",title.col="black")#
+}
+plotRealizations='yes') {#
+dn      = wwindow/2#
+#
+# rather than removing the NA's, interpolate over them: #
+Bn  = na.approx(Bn,na.rm=F)#
+#
+ntot    = length(Bn)#
+n1 = min((1:ntot)[ddate==date1])#
+#
+eucDist = Bn*0.0 + NA#
+#
+x1   = Bn[(n1-2*dn):n1]#
+#
+## ensure that the data we scan can be used for a window prediction forward - that is we have data for (n1-2*dn)+wwindow#
+#
+for (i in (1+dn):(n1-2*dn)) {	#
+	x2 = Bn[(i-dn):(i+dn)]#
+	tmp = (x2-x1) * (x2-x1)#
+	eucDist[i] = sqrt(sum(tmp)) #
+	#eucDist[i] = dist(rbind(x1,x2),method="euclidean") # The above is almost x10 faster#
+}#
+#
+eucDistRaw = eucDist#
+eucDist[eucDist == 0] = 999999#
+eucDist[is.na(eucDist)] = 999999#
+npatt = 50 # find top npatt locations#
+orderEucDist = order(eucDist,method='radix')#
+#
+## In the case of cor need to order in decreasing and repalce 999 with -999 above#
+##orderEucDist = order(eucDist,method='radix',decreasing=TRUE)#
+#
+meanBnPred = rep(0.0,(1+2*dn))#
+BnRealizations = matrix(0,length(meanBnPred),npatt)#
+#
+for (j in 1:npatt) {#
+	iEuc = orderEucDist[j]#
+	meanBnPred = Bn[(iEuc+dn):(iEuc+3*dn)] + meanBnPred#
+	BnRealizations[,j] = Bn[(iEuc+dn):(iEuc+3*dn)]#
+}#
+#
+meanBnPred = meanBnPred/npatt#
+#
+if (plotRealizations == "yes") {#
+	for (j in 1:npatt) {#
+		iEuc = orderEucDist[j]#
+		lines(ddate[(n1 - dn * 2):(n1 + dn * 2)], BnRealizations[, j], col = "grey", type = "l")#
+	}#
+}#
+#
+BnFuture = Bn[n1:(n1+2*dn)]#
+#
+lines(ddate[(n1-2*dn):n1],Bn[(n1-2*dn):n1],col="black",lwd=2,type="l")
+err = 0 # set the error flag to zero#
+#
+  if (nsmooth != 0) {#
+  	 Bn = smooth(Bn,nsmooth)#
+  }#
+  if (models[9] == T) { # run a second smoother over the OMNI data if comparing to UCSD results#
+    	 Bn = smooth(Bn,3*24)#
+}#
+  # Plot the data#
+  symSize = 0.25#
+  bleglower = 0. - bmax/2.#
+  cex1 = 0.6#
+  mlwd = 2#
+  xmin = date1 - wwindow*3600.#
+  xmax = date1 + wwindow*3600.#
+  BnNow = Bn[ddate==date1]#
+  nshift = round(24*27.2753)#
+  BnRecurrence = shift(Bn,nshift)#
+  BnZero = 0.0*Bn#
+  BnPsychic = BnZero  + runif(1,-bmax,bmax)#
+  BnPersistence = Bn*0.0+BnNow#
+  nBn = length(Bn)#
+  Bm = 3.0#
+  BnTurbulence = runif(nBn,-Bm,Bm)#
+  ipred = ((ddate >= date1) & (ddate <= xmax))#
+  isub  = ((ddate >=xmin) & (ddate <= xmax))#
+  imodels = (models == T) #
+ obs51 = 0.0#
+ if (min(Bn[ipred]) < -5.0) {obs51 = 100.}#
+  plot(ddate[isub],Bn[isub],ylim=c(-bmax,bmax),#
+       ylab="Bn (nT)",cex=symSize, xlab="Time (Date)", #
+       xlim=c(xmin,xmax),type="l",xaxt="n")#
+  axis.POSIXct(1,at = seq(xmin,xmax, by = "day"), format = "%m/%d/%y")
+lines(c(date1,date1),c(-bmax,bmax),type="l",col="red",lwd=3)#
+  lines(c(min(ddate)-2,max(ddate)+2),c(0,0),type="l",lty=2)#
+  # add in some model predictions:#
+  # Here's the order: psychic,zero,persistence, recurrence,pattrec,cme1,turbulence,mcmc#
+  nipred  = length(Bn[ipred])#
+  cmodels = c("red","blue","green","brown","purple","blue1","magenta","green4","navy","blue4")#
+  corrVec = 0.0*vector("numeric",length(models))#
+  probFor = 0.0*vector("numeric",length(models))#
+  MSE     = 0.0*vector("numeric",length(models))#
+#
+  if (models[5] == T) {#
+    arrPattRec = pattRec(ddate,Bn,date1=date1,wwindow=wwindow,bmax=bmax,plotRealizations=plotRealizations)#
+    meanBnPred = arrPattRec$meanBnPred#
+    BnRealizations = arrPattRec$BnRealizations#
+    nrow = dim(BnRealizations)[1]#
+    ncol = dim(BnRealizations)[2]#
+    probForAll = vector("numeric",ncol)#
+    for (i in 1:(ncol)) {#
+        if (min(BnRealizations[,i]) < -5.0) {probForAll[i] = 100.}     #
+    }#
+#
+    # compute quantiles#
+    quantArr = matrix(0,5,nrow)#
+    for (i in 1:(nrow)) {#
+        quantOne = quantile(BnRealizations[i,])#
+        quantArr[,i] = quantOne#
+    }    #
+    ypoly = c(quantArr[2,],rev(quantArr[4,]))#
+    xpoly = c(ddate[ipred],rev(ddate[ipred]))#
+    if (plotQuantiles=="yes") {polygon(xpoly,ypoly,col=rgb(0, 1, 0,0.3),border=NA)}#
+    points(ddate[ipred],meanBnPred,col=cmodels[5],lwd=mlwd,type="l")#
+    if (plotQuantiles=="yes") {text(xmax-(xmax-xmin)/8.,-bmax,"25/75% Quantiles",cex=cex1,col="green3")}#
+    ##if (plotQuantiles=="yes") {text(xmax-(xmax-xmin)/2.75,-bmax,"25/75% Quantiles",cex=cex1,col="green3")}#
+    corrVec[5] = cor(Bn[ipred], meanBnPred,method="pearson",use="complete")#
+    probFor[5] = sum(probForAll)/ncol#
+    MSE[5] = mse(meanBnPred, Bn[ipred], na.rm=T)#
+  }
+ipred
+isub
+# add in some model predictions:#
+  # Here's the order: psychic,zero,persistence, recurrence,pattrec,cme1,turbulence,mcmc#
+  nipred  = length(Bn[ipred])#
+  cmodels = c("red","blue","green","brown","purple","blue1","magenta","green4","navy","blue4")#
+  corrVec = 0.0*vector("numeric",length(models))#
+  probFor = 0.0*vector("numeric",length(models))#
+  MSE     = 0.0*vector("numeric",length(models))
+arrPattRec = pattRec(ddate,Bn,date1=date1,wwindow=wwindow,bmax=bmax,plotRealizations=plotRealizations)
+date1
+plotRealizations
+bmax
+wwindow
+length(Bn)
+dn      = wwindow/2#
+#
+# rather than removing the NA's, interpolate over them: #
+Bn  = na.approx(Bn,na.rm=F)#
+#
+ntot    = length(Bn)#
+n1 = min((1:ntot)[ddate==date1])#
+#
+eucDist = Bn*0.0 + NA#
+#
+x1   = Bn[(n1-2*dn):n1]#
+#
+## ensure that the data we scan can be used for a window prediction forward - that is we have data for (n1-2*dn)+wwindow#
+#
+for (i in (1+dn):(n1-2*dn)) {	#
+	x2 = Bn[(i-dn):(i+dn)]#
+	tmp = (x2-x1) * (x2-x1)#
+	eucDist[i] = sqrt(sum(tmp)) #
+	#eucDist[i] = dist(rbind(x1,x2),method="euclidean") # The above is almost x10 faster#
+}#
+#
+eucDistRaw = eucDist#
+eucDist[eucDist == 0] = 999999#
+eucDist[is.na(eucDist)] = 999999#
+npatt = 50 # find top npatt locations#
+orderEucDist = order(eucDist,method='radix')#
+#
+## In the case of cor need to order in decreasing and repalce 999 with -999 above#
+##orderEucDist = order(eucDist,method='radix',decreasing=TRUE)#
+#
+meanBnPred = rep(0.0,(1+2*dn))#
+BnRealizations = matrix(0,length(meanBnPred),npatt)#
+#
+for (j in 1:npatt) {#
+	iEuc = orderEucDist[j]#
+	meanBnPred = Bn[(iEuc+dn):(iEuc+3*dn)] + meanBnPred#
+	BnRealizations[,j] = Bn[(iEuc+dn):(iEuc+3*dn)]#
+}
+dim(BnRealizations)
+length(ddate[(n1 - dn * 2):(n1 + dn * 2)])
+dn      = wwindow/2#
+#
+# rather than removing the NA's, interpolate over them: #
+Bn  = na.approx(Bn,na.rm=F)#
+#
+ntot    = length(Bn)#
+n1 = min((1:ntot)[ddate==date1])#
+#
+eucDist = Bn*0.0 + NA#
+#
+x1   = Bn[(n1-2*dn):n1]#
+#
+## ensure that the data we scan can be used for a window prediction forward - that is we have data for (n1-2*dn)+wwindow#
+#
+for (i in (1+dn):(n1-2*dn)) {	#
+	x2 = Bn[(i-dn):(i+dn)]#
+	tmp = (x2-x1) * (x2-x1)#
+	eucDist[i] = sqrt(sum(tmp)) #
+	#eucDist[i] = dist(rbind(x1,x2),method="euclidean") # The above is almost x10 faster#
+}#
+#
+eucDistRaw = eucDist#
+eucDist[eucDist == 0] = 999999#
+eucDist[is.na(eucDist)] = 999999#
+npatt = 50 # find top npatt locations#
+orderEucDist = order(eucDist,method='radix')#
+#
+## In the case of cor need to order in decreasing and repalce 999 with -999 above#
+##orderEucDist = order(eucDist,method='radix',decreasing=TRUE)#
+#
+meanBnPred = rep(0.0,(1+2*dn))#
+BnRealizations = matrix(0,length(meanBnPred),npatt)#
+#
+for (j in 1:npatt) {#
+	iEuc = orderEucDist[j]#
+	meanBnPred = Bn[(iEuc+dn):(iEuc+3*dn)] + meanBnPred#
+	BnRealizations[,j] = Bn[(iEuc+dn):(iEuc+3*dn)]#
+}#
+#
+meanBnPred = meanBnPred/npatt#
+#
+if (plotRealizations == "yes") {#
+	for (j in 1:npatt) {#
+    iEuc = orderEucDist[j]#
+    lines(ddate[(n1-dn*2):(n1+dn*2)],Bn[(iEuc-dn):(iEuc+3*dn)],col="grey",type="l") #
+	}#
+}#
+#
+BnFuture = Bn[n1:(n1+2*dn)]#
+#
+lines(ddate[(n1-2*dn):n1],Bn[(n1-2*dn):n1],col="black",lwd=2,type="l")
+corrCoeff = cor(meanBnPred,BnFuture,use="complete")
+err = 0 # set the error flag to zero#
+#
+  if (nsmooth != 0) {#
+  	 Bn = smooth(Bn,nsmooth)#
+  }#
+  if (models[9] == T) { # run a second smoother over the OMNI data if comparing to UCSD results#
+    	 Bn = smooth(Bn,3*24)#
+}#
+  # Plot the data#
+  symSize = 0.25#
+  bleglower = 0. - bmax/2.#
+  cex1 = 0.6#
+  mlwd = 2#
+  xmin = date1 - wwindow*3600.#
+  xmax = date1 + wwindow*3600.#
+  BnNow = Bn[ddate==date1]#
+  nshift = round(24*27.2753)#
+  BnRecurrence = shift(Bn,nshift)#
+  BnZero = 0.0*Bn#
+  BnPsychic = BnZero  + runif(1,-bmax,bmax)#
+  BnPersistence = Bn*0.0+BnNow#
+  nBn = length(Bn)#
+  Bm = 3.0#
+  BnTurbulence = runif(nBn,-Bm,Bm)#
+  ipred = ((ddate >= date1) & (ddate <= xmax))#
+  isub  = ((ddate >=xmin) & (ddate <= xmax))#
+  imodels = (models == T) #
+ obs51 = 0.0#
+ if (min(Bn[ipred]) < -5.0) {obs51 = 100.}#
+  plot(ddate[isub],Bn[isub],ylim=c(-bmax,bmax),#
+       ylab="Bn (nT)",cex=symSize, xlab="Time (Date)", #
+       xlim=c(xmin,xmax),type="l",xaxt="n")#
+  axis.POSIXct(1,at = seq(xmin,xmax, by = "day"), format = "%m/%d/%y")#
+  #axis.POSIXct(3, at = seq(xmin,xmax, by = "hour",origin=xmin), format = "%H")#
+  lines(c(date1,date1),c(-bmax,bmax),type="l",col="red",lwd=3)#
+  lines(c(min(ddate)-2,max(ddate)+2),c(0,0),type="l",lty=2)#
+  # add in some model predictions:#
+  # Here's the order: psychic,zero,persistence, recurrence,pattrec,cme1,turbulence,mcmc#
+  nipred  = length(Bn[ipred])#
+  cmodels = c("red","blue","green","brown","purple","blue1","magenta","green4","navy","blue4")#
+  corrVec = 0.0*vector("numeric",length(models))#
+  probFor = 0.0*vector("numeric",length(models))#
+  MSE     = 0.0*vector("numeric",length(models))#
+#
+  if (models[5] == T) {#
+    arrPattRec = pattRec(ddate,Bn,date1=date1,wwindow=wwindow,bmax=bmax,plotRealizations=plotRealizations)#
+    meanBnPred = arrPattRec$meanBnPred#
+    BnRealizations = arrPattRec$BnRealizations#
+    nrow = dim(BnRealizations)[1]#
+    ncol = dim(BnRealizations)[2]#
+    probForAll = vector("numeric",ncol)#
+    for (i in 1:(ncol)) {#
+        if (min(BnRealizations[,i]) < -5.0) {probForAll[i] = 100.}     #
+    }#
+#
+    # compute quantiles#
+    quantArr = matrix(0,5,nrow)#
+    for (i in 1:(nrow)) {#
+        quantOne = quantile(BnRealizations[i,])#
+        quantArr[,i] = quantOne#
+    }    #
+    ypoly = c(quantArr[2,],rev(quantArr[4,]))#
+    xpoly = c(ddate[ipred],rev(ddate[ipred]))#
+    if (plotQuantiles=="yes") {polygon(xpoly,ypoly,col=rgb(0, 1, 0,0.3),border=NA)}#
+    points(ddate[ipred],meanBnPred,col=cmodels[5],lwd=mlwd,type="l")#
+    if (plotQuantiles=="yes") {text(xmax-(xmax-xmin)/8.,-bmax,"25/75% Quantiles",cex=cex1,col="green3")}#
+    ##if (plotQuantiles=="yes") {text(xmax-(xmax-xmin)/2.75,-bmax,"25/75% Quantiles",cex=cex1,col="green3")}#
+    corrVec[5] = cor(Bn[ipred], meanBnPred,method="pearson",use="complete")#
+    probFor[5] = sum(probForAll)/ncol#
+    MSE[5] = mse(meanBnPred, Bn[ipred], na.rm=T)#
+  }    #
+#
+if (models[6] == T) {#
+    arrCME1 = readCME1Mag()#
+    ddateCME1 = arrCME1$ddate#
+    BnCME1 = arrCME1$Bn#
+    BnCME1Realizations = arrCME1$BnRealizations#
+    BnCME1_int = approx(as.numeric(ddateCME1),BnCME1,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnCME1_inty = BnCME1_int$y#
+    nrow = dim(BnCME1Realizations)[1]#
+    ncol = dim(BnCME1Realizations)[2]#
+    if (plotRealizations == "yes") {#
+    	for (i in 1:(ncol - 2)) {#
+    		lines(ddateCME1, BnCME1Realizations[, i], type = "l", col = "grey")#
+    	}#
+    }#
+#
+    lines(ddateCME1,BnCME1,type="l",col=cmodels[6],lwd=mlwd)#
+    lines(ddate[ipred],BnCME1_inty,type="l",col=cmodels[6])#
+    # compute quantiles#
+    quantArr = matrix(0,5,nrow)#
+    for (i in 1:(nrow)) {#
+        quantOne = quantile(BnCME1Realizations[i,])#
+        quantArr[,i] = quantOne#
+    }    #
+    ypoly = c(quantArr[2,],rev(quantArr[4,]))#
+    xpoly = c(ddateCME1,rev(ddateCME1))#
+    if (plotQuantiles=="yes") {#
+    	polygon(xpoly,ypoly,col=rgb(0, 1, 0,0.3),border=NA)#
+    	text(xmax-(xmax-xmin)/8.,-bmax,"25/75% Quantiles",cex=cex1,col="green3")#
+    }#
+    corrVec[6] = cor(Bn[ipred],BnCME1_inty,method="pearson",use="complete")#
+    if (min(BnCME1) < -5.0) {probFor[6] = 100.}#
+    MSE[6] = mse(BnCME1_inty, Bn[ipred], na.rm=T)#
+}    #
+#
+  if (models[1] == T) {#
+    lines(ddate[ipred],BnZero[ipred],type="l",col=cmodels[1],lwd=mlwd)#
+    corrVec[1] = cor(Bn[ipred],BnZero[ipred],method="pearson",use="complete")#
+    probFor[1] = 0.0#
+    MSE[1] = mse(BnZero[ipred],Bn[ipred], na.rm=T)#
+  }    #
+#
+  if (models[2] == T) {#
+    lines(ddate[ipred],BnPsychic[ipred],type="l",col=cmodels[2],lwd=mlwd)#
+    corrVec[2] = cor(Bn[ipred],BnPsychic[ipred],method="pearson",use="complete")#
+    if (min(BnPsychic[ipred]) < -5.0) {probFor[2] = 100.}#
+    MSE[2] = mse(BnPsychic[ipred], Bn[ipred], na.rm=T)#
+  }#
+  if (models[3] == T) {#
+    lines(ddate[ipred],BnPersistence[ipred],type="l",col=cmodels[3],lwd=mlwd)#
+    corrVec[3] = cor(Bn[ipred],BnPersistence[ipred],method="pearson",use="complete")#
+    if (min(BnPersistence[ipred]) < -5.0) {probFor[3] = 100.}#
+    MSE[3] = mse(BnPersistence[ipred], Bn[ipred], na.rm=T)#
+  }    #
+  if (models[4] == T) {#
+    lines(ddate[ipred],BnRecurrence[ipred],c(0,0),type="l",col=cmodels[4],lwd=mlwd)#
+    corrVec[4] = cor(Bn[ipred],BnRecurrence[ipred],method="pearson",use="complete")#
+    if (min(na.omit(BnRecurrence[ipred])) < -5.0) {probFor[4] = 100.}#
+    MSE[4] = mse(BnRecurrence[ipred], Bn[ipred], na.rm=T)#
+  }    #
+#
+ if (models[7] == T) {#
+    lines(ddate[ipred],BnTurbulence[ipred],type="l",col=cmodels[7],lwd=mlwd)#
+    corrVec[7] = cor(Bn[ipred],BnTurbulence[ipred],method="pearson",use="complete")#
+    if (min(na.omit(BnTurbulence[ipred])) < -5.0) {probFor[7] = 100.}#
+    MSE[7] = mse(BnTurbulence[ipred],Bn[ipred], na.rm=T)#
+  }    #
+#
+if (models[8] == T) {#
+    arrMCMC = readMCMC()#
+    ddateMCMC = arrMCMC$ddate#
+    BnMCMC = arrMCMC$Bn#
+    BnMCMCRealizations = arrMCMC$BnRealizations#
+    BnMCMC_int = approx(as.numeric(ddateMCMC),BnMCMC,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnMCMC_inty = BnMCMC_int$y#
+    ncol = dim(BnMCMCRealizations)[2]#
+    probForAll = vector("numeric",ncol)#
+    for (i in 1:(ncol-2)) {#
+        if (min(BnMCMCRealizations[10:32,i]) < -5.0) {probForAll[i] = 100.}     #
+    }#
+    if (plotRealizations == "yes") {#
+    	for (i in 1:(ncol - 2)) {#
+    		lines(ddateMCMC, BnMCMCRealizations[, i], type = "l", col = "grey")#
+    	}#
+    }#
+    lines(ddateMCMC,BnMCMC,type="l",col=cmodels[8],lwd=mlwd)#
+    lines(ddate[ipred],BnMCMC_inty,type="l",col=cmodels[8])#
+    corrVec[8] = cor(Bn[ipred],BnMCMC_inty,method="pearson",use="complete")#
+    probFor[8] = sum(probForAll)/ncol#
+    MSE[8] = mse(BnMCMC_inty, Bn[ipred], na.rm=T)#
+# compute probability that a field will be southward for 3 hours during next 24 hours#
+    for (i in 1:(ncol-2)) {#
+        x = (BnMCMCRealizations[,i] < -5)	#
+    } #
+  }    #
+if (models[9] == T) {#
+    arrUCSD = readUCSD()#
+    ddateUCSD = arrUCSD$ddate#
+    BnUCSD = arrUCSD$Bn#
+    BnUCSD_int = approx(as.numeric(ddateUCSD),BnUCSD,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnUCSD_inty = BnUCSD_int$y#
+    lines(ddateUCSD,BnUCSD,type="l",col=cmodels[9],lwd=mlwd)#
+    lines(ddate[ipred],BnUCSD_inty,type="l",col=cmodels[9])#
+    corrVec[9] = cor(Bn[ipred],BnUCSD_inty,method="pearson",use="complete")#
+    if (min(BnUCSD_inty) < -5.0) {probFor[9] = 100.}#
+    MSE[9] = mse(BnUCSD_inty, Bn[ipred], na.rm=T)#
+}    #
+if (models[10] == T) {#
+    arrSavani = readSavani()#
+    ddateSavani = arrSavani$ddate#
+    BnSavani = arrSavani$Bn#
+    BnSavani_int = approx(as.numeric(ddateSavani),BnSavani,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnSavani_inty = BnSavani_int$y#
+    lines(ddateSavani,BnSavani,type="l",col=cmodels[10],lwd=mlwd)#
+    lines(ddate[ipred],BnSavani_inty,type="l",col=cmodels[10])#
+    corrVec[10] = cor(Bn[ipred],BnSavani_inty,method="pearson",use="complete")#
+    if (min(BnSavani) < -5.0) {probFor[10] = 100.}#
+    MSE[10] = mse(BnSavani_inty, Bn[ipred], na.rm=T)#
+}    #
+  skill = (1 - MSE/MSE[1]) ##*100.#
+#
+  lines(ddate[isub], Bn[isub], type = "l") # plot again to overlay other plots#
+  lines(c(date1, date1), c(-bmax, bmax), type = "l", col = "red", lwd = 3)#
+  lines(c(min(ddate) - 2, max(ddate) + 2), c(0, 0), type = "l", lty = 2)#
+  lines(ddate[ipred], -5 + BnZero[ipred], type = "l", lty = 3, col = "red")#
+#
+  legend(xmin, bmax, lty = replicate(length(models[imodels]) + 1, 1), c(sc, smodels[imodels]), lwd = replicate(length(models[imodels]) + 1, 2.5), #
+  text.col = c("black", cmodels[imodels]), col = c("black", cmodels[imodels]), cex = cex1, title = "Observations/Models", title.col = "black")#
+  legend("topright", legend = date1, bty = "n")
+source("libProjectZed.R")
+err = 0 # set the error flag to zero#
+#
+  if (nsmooth != 0) {#
+  	 Bn = smooth(Bn,nsmooth)#
+  }#
+  if (models[9] == T) { # run a second smoother over the OMNI data if comparing to UCSD results#
+    	 Bn = smooth(Bn,3*24)#
+}#
+  # Plot the data#
+  symSize = 0.25#
+  bleglower = 0. - bmax/2.#
+  cex1 = 0.6#
+  mlwd = 2#
+  xmin = date1 - wwindow*3600.#
+  xmax = date1 + wwindow*3600.#
+  BnNow = Bn[ddate==date1]#
+  nshift = round(24*27.2753)#
+  BnRecurrence = shift(Bn,nshift)#
+  BnZero = 0.0*Bn#
+  BnPsychic = BnZero  + runif(1,-bmax,bmax)#
+  BnPersistence = Bn*0.0+BnNow#
+  nBn = length(Bn)#
+  Bm = 3.0#
+  BnTurbulence = runif(nBn,-Bm,Bm)#
+  ipred = ((ddate >= date1) & (ddate <= xmax))#
+  isub  = ((ddate >=xmin) & (ddate <= xmax))#
+  imodels = (models == T) #
+ obs51 = 0.0#
+ if (min(Bn[ipred]) < -5.0) {obs51 = 100.}#
+  plot(ddate[isub],Bn[isub],ylim=c(-bmax,bmax),#
+       ylab="Bn (nT)",cex=symSize, xlab="Time (Date)", #
+       xlim=c(xmin,xmax),type="l",xaxt="n")#
+  axis.POSIXct(1,at = seq(xmin,xmax, by = "day"), format = "%m/%d/%y")#
+  #axis.POSIXct(3, at = seq(xmin,xmax, by = "hour",origin=xmin), format = "%H")#
+  lines(c(date1,date1),c(-bmax,bmax),type="l",col="red",lwd=3)#
+  lines(c(min(ddate)-2,max(ddate)+2),c(0,0),type="l",lty=2)#
+  # add in some model predictions:#
+  # Here's the order: psychic,zero,persistence, recurrence,pattrec,cme1,turbulence,mcmc#
+  nipred  = length(Bn[ipred])#
+  cmodels = c("red","blue","green","brown","purple","blue1","magenta","green4","navy","blue4")#
+  corrVec = 0.0*vector("numeric",length(models))#
+  probFor = 0.0*vector("numeric",length(models))#
+  MSE     = 0.0*vector("numeric",length(models))#
+#
+  if (models[5] == T) {#
+    arrPattRec = pattRec(ddate,Bn,date1=date1,wwindow=wwindow,bmax=bmax,plotRealizations=plotRealizations)#
+    meanBnPred = arrPattRec$meanBnPred#
+    BnRealizations = arrPattRec$BnRealizations#
+    nrow = dim(BnRealizations)[1]#
+    ncol = dim(BnRealizations)[2]#
+    probForAll = vector("numeric",ncol)#
+    for (i in 1:(ncol)) {#
+        if (min(BnRealizations[,i]) < -5.0) {probForAll[i] = 100.}     #
+    }#
+#
+    # compute quantiles#
+    quantArr = matrix(0,5,nrow)#
+    for (i in 1:(nrow)) {#
+        quantOne = quantile(BnRealizations[i,])#
+        quantArr[,i] = quantOne#
+    }    #
+    ypoly = c(quantArr[2,],rev(quantArr[4,]))#
+    xpoly = c(ddate[ipred],rev(ddate[ipred]))#
+    if (plotQuantiles=="yes") {polygon(xpoly,ypoly,col=rgb(0, 1, 0,0.3),border=NA)}#
+    points(ddate[ipred],meanBnPred,col=cmodels[5],lwd=mlwd,type="l")#
+    if (plotQuantiles=="yes") {text(xmax-(xmax-xmin)/8.,-bmax,"25/75% Quantiles",cex=cex1,col="green3")}#
+    ##if (plotQuantiles=="yes") {text(xmax-(xmax-xmin)/2.75,-bmax,"25/75% Quantiles",cex=cex1,col="green3")}#
+    corrVec[5] = cor(Bn[ipred], meanBnPred,method="pearson",use="complete")#
+    probFor[5] = sum(probForAll)/ncol#
+    MSE[5] = mse(meanBnPred, Bn[ipred], na.rm=T)#
+  }    #
+#
+if (models[6] == T) {#
+    arrCME1 = readCME1Mag()#
+    ddateCME1 = arrCME1$ddate#
+    BnCME1 = arrCME1$Bn#
+    BnCME1Realizations = arrCME1$BnRealizations#
+    BnCME1_int = approx(as.numeric(ddateCME1),BnCME1,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnCME1_inty = BnCME1_int$y#
+    nrow = dim(BnCME1Realizations)[1]#
+    ncol = dim(BnCME1Realizations)[2]#
+    if (plotRealizations == "yes") {#
+    	for (i in 1:(ncol - 2)) {#
+    		lines(ddateCME1, BnCME1Realizations[, i], type = "l", col = "grey")#
+    	}#
+    }#
+#
+    lines(ddateCME1,BnCME1,type="l",col=cmodels[6],lwd=mlwd)#
+    lines(ddate[ipred],BnCME1_inty,type="l",col=cmodels[6])#
+    # compute quantiles#
+    quantArr = matrix(0,5,nrow)#
+    for (i in 1:(nrow)) {#
+        quantOne = quantile(BnCME1Realizations[i,])#
+        quantArr[,i] = quantOne#
+    }    #
+    ypoly = c(quantArr[2,],rev(quantArr[4,]))#
+    xpoly = c(ddateCME1,rev(ddateCME1))#
+    if (plotQuantiles=="yes") {#
+    	polygon(xpoly,ypoly,col=rgb(0, 1, 0,0.3),border=NA)#
+    	text(xmax-(xmax-xmin)/8.,-bmax,"25/75% Quantiles",cex=cex1,col="green3")#
+    }#
+    corrVec[6] = cor(Bn[ipred],BnCME1_inty,method="pearson",use="complete")#
+    if (min(BnCME1) < -5.0) {probFor[6] = 100.}#
+    MSE[6] = mse(BnCME1_inty, Bn[ipred], na.rm=T)#
+}    #
+#
+  if (models[1] == T) {#
+    lines(ddate[ipred],BnZero[ipred],type="l",col=cmodels[1],lwd=mlwd)#
+    corrVec[1] = cor(Bn[ipred],BnZero[ipred],method="pearson",use="complete")#
+    probFor[1] = 0.0#
+    MSE[1] = mse(BnZero[ipred],Bn[ipred], na.rm=T)#
+  }    #
+#
+  if (models[2] == T) {#
+    lines(ddate[ipred],BnPsychic[ipred],type="l",col=cmodels[2],lwd=mlwd)#
+    corrVec[2] = cor(Bn[ipred],BnPsychic[ipred],method="pearson",use="complete")#
+    if (min(BnPsychic[ipred]) < -5.0) {probFor[2] = 100.}#
+    MSE[2] = mse(BnPsychic[ipred], Bn[ipred], na.rm=T)#
+  }#
+  if (models[3] == T) {#
+    lines(ddate[ipred],BnPersistence[ipred],type="l",col=cmodels[3],lwd=mlwd)#
+    corrVec[3] = cor(Bn[ipred],BnPersistence[ipred],method="pearson",use="complete")#
+    if (min(BnPersistence[ipred]) < -5.0) {probFor[3] = 100.}#
+    MSE[3] = mse(BnPersistence[ipred], Bn[ipred], na.rm=T)#
+  }    #
+  if (models[4] == T) {#
+    lines(ddate[ipred],BnRecurrence[ipred],c(0,0),type="l",col=cmodels[4],lwd=mlwd)#
+    corrVec[4] = cor(Bn[ipred],BnRecurrence[ipred],method="pearson",use="complete")#
+    if (min(na.omit(BnRecurrence[ipred])) < -5.0) {probFor[4] = 100.}#
+    MSE[4] = mse(BnRecurrence[ipred], Bn[ipred], na.rm=T)#
+  }    #
+#
+ if (models[7] == T) {#
+    lines(ddate[ipred],BnTurbulence[ipred],type="l",col=cmodels[7],lwd=mlwd)#
+    corrVec[7] = cor(Bn[ipred],BnTurbulence[ipred],method="pearson",use="complete")#
+    if (min(na.omit(BnTurbulence[ipred])) < -5.0) {probFor[7] = 100.}#
+    MSE[7] = mse(BnTurbulence[ipred],Bn[ipred], na.rm=T)#
+  }    #
+#
+if (models[8] == T) {#
+    arrMCMC = readMCMC()#
+    ddateMCMC = arrMCMC$ddate#
+    BnMCMC = arrMCMC$Bn#
+    BnMCMCRealizations = arrMCMC$BnRealizations#
+    BnMCMC_int = approx(as.numeric(ddateMCMC),BnMCMC,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnMCMC_inty = BnMCMC_int$y#
+    ncol = dim(BnMCMCRealizations)[2]#
+    probForAll = vector("numeric",ncol)#
+    for (i in 1:(ncol-2)) {#
+        if (min(BnMCMCRealizations[10:32,i]) < -5.0) {probForAll[i] = 100.}     #
+    }#
+    if (plotRealizations == "yes") {#
+    	for (i in 1:(ncol - 2)) {#
+    		lines(ddateMCMC, BnMCMCRealizations[, i], type = "l", col = "grey")#
+    	}#
+    }#
+    lines(ddateMCMC,BnMCMC,type="l",col=cmodels[8],lwd=mlwd)#
+    lines(ddate[ipred],BnMCMC_inty,type="l",col=cmodels[8])#
+    corrVec[8] = cor(Bn[ipred],BnMCMC_inty,method="pearson",use="complete")#
+    probFor[8] = sum(probForAll)/ncol#
+    MSE[8] = mse(BnMCMC_inty, Bn[ipred], na.rm=T)#
+# compute probability that a field will be southward for 3 hours during next 24 hours#
+    for (i in 1:(ncol-2)) {#
+        x = (BnMCMCRealizations[,i] < -5)	#
+    } #
+  }    #
+if (models[9] == T) {#
+    arrUCSD = readUCSD()#
+    ddateUCSD = arrUCSD$ddate#
+    BnUCSD = arrUCSD$Bn#
+    BnUCSD_int = approx(as.numeric(ddateUCSD),BnUCSD,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnUCSD_inty = BnUCSD_int$y#
+    lines(ddateUCSD,BnUCSD,type="l",col=cmodels[9],lwd=mlwd)#
+    lines(ddate[ipred],BnUCSD_inty,type="l",col=cmodels[9])#
+    corrVec[9] = cor(Bn[ipred],BnUCSD_inty,method="pearson",use="complete")#
+    if (min(BnUCSD_inty) < -5.0) {probFor[9] = 100.}#
+    MSE[9] = mse(BnUCSD_inty, Bn[ipred], na.rm=T)#
+}    #
+if (models[10] == T) {#
+    arrSavani = readSavani()#
+    ddateSavani = arrSavani$ddate#
+    BnSavani = arrSavani$Bn#
+    BnSavani_int = approx(as.numeric(ddateSavani),BnSavani,as.numeric(ddate[ipred]),rule=1,method="linear")#
+    BnSavani_inty = BnSavani_int$y#
+    lines(ddateSavani,BnSavani,type="l",col=cmodels[10],lwd=mlwd)#
+    lines(ddate[ipred],BnSavani_inty,type="l",col=cmodels[10])#
+    corrVec[10] = cor(Bn[ipred],BnSavani_inty,method="pearson",use="complete")#
+    if (min(BnSavani) < -5.0) {probFor[10] = 100.}#
+    MSE[10] = mse(BnSavani_inty, Bn[ipred], na.rm=T)#
+}    #
+  skill = (1 - MSE/MSE[1]) ##*100.#
+#
+  lines(ddate[isub], Bn[isub], type = "l") # plot again to overlay other plots#
+  lines(c(date1, date1), c(-bmax, bmax), type = "l", col = "red", lwd = 3)#
+  lines(c(min(ddate) - 2, max(ddate) + 2), c(0, 0), type = "l", lty = 2)#
+  lines(ddate[ipred], -5 + BnZero[ipred], type = "l", lty = 3, col = "red")#
+#
+  legend(xmin, bmax, lty = replicate(length(models[imodels]) + 1, 1), c(sc, smodels[imodels]), lwd = replicate(length(models[imodels]) + 1, 2.5), #
+  text.col = c("black", cmodels[imodels]), col = c("black", cmodels[imodels]), cex = cex1, title = "Observations/Models", title.col = "black")#
+  legend("topright", legend = date1, bty = "n")
+if (plotB == 'yes') {      #
+plotDataBn = plotMag(ddate,Bn,date1=date1,wwindow=wwindow,models=models,smodels=smodels,#
+		nsmooth=nsmooth,bmax=bmax,sc= sDataSet, plotRealizations= plotRealizations, #
+		plotQuantiles= plotQuantiles,legendOn=T)#
+}
+plotB='yes'
+if (plotB == 'yes') {      #
+plotDataBn = plotMag(ddate,Bn,date1=date1,wwindow=wwindow,models=models,smodels=smodels,#
+		nsmooth=nsmooth,bmax=bmax,sc= sDataSet, plotRealizations= plotRealizations, #
+		plotQuantiles= plotQuantiles,legendOn=T)#
+}
+ddate = readData$ddate#
+        Bn    = readData$Bn#
+        vr    = readData$vr#
+        np    = readData$np#
+        Temp  = readData$Temp#
+        Br    = readData$Br#
+        Bt    = readData$Bt
+nsmooth = 0 #
+bmax    = 20.0
+sDataSet="OMNI"
+if (plotB == 'yes') {      #
+plotDataBn = plotMag(ddate,Bn,date1=date1,wwindow=wwindow,models=models,smodels=smodels,#
+		nsmooth=nsmooth,bmax=bmax,sc= sDataSet, plotRealizations= plotRealizations, #
+		plotQuantiles= plotQuantiles,legendOn=T)#
+}
+plotQuantiles='yes'
+if (plotB == 'yes') {      #
+plotDataBn = plotMag(ddate,Bn,date1=date1,wwindow=wwindow,models=models,smodels=smodels,#
+		nsmooth=nsmooth,bmax=bmax,sc= sDataSet, plotRealizations= plotRealizations, #
+		plotQuantiles= plotQuantiles,legendOn=T)#
+}
+BnRealizations
+ddate = readData$ddate#
+        Bn    = readData$Bn#
+        vr    = readData$vr#
+        np    = readData$np#
+        Temp  = readData$Temp#
+        Br    = readData$Br#
+        Bt    = readData$Bt
+# Change outliers to NA's#
+      Bn[Bn==999.9] = NA#
+      vr[vr==9999]  = NA#
+      np[np==999.9] = NA#
+      Temp[Temp==9999999] = NA#
+      Br[Br==999.9] = NA#
+      Bt[Bt=999.9] = NA
+if (plotB == 'yes') {      #
+plotDataBn = plotMag(ddate,Bn,date1=date1,wwindow=wwindow,models=models,smodels=smodels,#
+		nsmooth=nsmooth,bmax=bmax,sc= sDataSet, plotRealizations= plotRealizations, #
+		plotQuantiles= plotQuantiles,legendOn=T)#
+}
+Br=Bn
+if (plotB == 'yes') {      #
+plotDataBn = plotMag(ddate,Bn,date1=date1,wwindow=wwindow,models=models,smodels=smodels,#
+		nsmooth=nsmooth,bmax=bmax,sc= sDataSet, plotRealizations= plotRealizations, #
+		plotQuantiles= plotQuantiles,legendOn=T)#
+}
+rm(list = ls())#
+#
+graphics.off()#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+#
+# projectZed.R#
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+#
+# DRIVER ROUTINE#
+#
+library(date)#
+#library(data.table)#
+library(hydroGOF)#
+library(Hmisc)#
+library(pander)#
+library(caTools) # load necessary libraries#
+library(zoo)#
+library(binhf)#
+library(stats)#
+#
+source("~/Dropbox/ProjectZed/michal/R/libPRojectZed.R")#
+#
+readDataFlag = T#
+#
+# choose which data to read: #
+#
+sDataSet = "OMNI" # \ACE\" # \"OMNI\""#
+#
+## Here's a good example for Pattern recognition#
+#
+ymd = "2000-09-18" # this corresponds with the 262 event from proposal#
+hhour = 4#
+mmin = 0#
+ssec = 0#
+#
+bmax = 20#
+#
+date1 = ISOdate(ymd,hhour,mmin,ssec,tz="UTC")
+date1
+dir = "~/Dropbox/ProjectZed/michal/plotly/data/"#
+  #dir = "data"#
+  err = 0 # set the error flag to zero#
+#
+  # if patt-rec is not set then don't need to read all of the #
+  # data...can make it a bit faster. #
+  # For now, though, just read the entire dataset#
+  #magFile = "omni_m_all_years.dat"#
+  magFile = "omni_m_all_years.rds"#
+  file = paste(dir,'/',magFile,sep='')#
+#
+  #arr_omni  <- read.csv(file,header=F,sep="",na.strings = c("-999.9"))#
+#
+  load(file)
+yyear= arr_omni$V1#
+  dday = arr_omni$V2#
+  hhour= arr_omni$V3#
+  Br   = arr_omni$V6#
+  Bt   = arr_omni$V7#
+  Bn   = arr_omni$V8#
+  B    = arr_omni$V9#
+  vr   = arr_omni$V10#
+  np   = arr_omni$V13#
+  Temp = arr_omni$V14#
+  # outlierReplace(arr_mag_today, "arr_mag_today$V10", which(arr_mag_today$V10 > -20), NA)#
+  # convert the year, day, and hour to a POSIX date using the #
+  # cron utility#
+  sdate = paste(yyear,' ',dday,' ',hhour,sep='')#
+  ddate = strptime(sdate,format="%Y %j %H",tz="UTC")#
+  result <- list(ddate=ddate,year=yyear,doy=dday,hour=hhour,Br=Br,Bt=Bt,Bn=Bn,B=B,vr=vr,np=np,Temp=Temp,err=err)
+head(result)
+ls()
+sdate = paste(yyear,' ',dday,' ',hhour,sep='')#
+  ddate = strptime(sdate,format="%Y %j %H",tz="UTC")#
+  result <- list(ddate=ddate,year=yyear,doy=dday,hour=hhour,Br=Br,Bt=Bt,Bn=Bn,B=B,vr=vr,np=np,Temp=Temp,err=err)#
+  readData <- result#
+  # Change outliers to NA's and convert to a data frame#
+ readData$Bn[readData$Bn == 999.9] = NA#
+ readData$vr[readData$vr == 9999] = NA#
+ readData$np[readData$np == 999.9] = NA#
+ readData$Temp[readData$Temp == 9999999] = NA#
+ readData$Br[readData$Br == 999.9] = NA#
+ readData$Bt[readData$Bt == 999.9] = NA
+ddate = readData$ddate#
+Bn    = readData$Bn#
+#
+index = which(ddate == date1)
+index
+install.libraries(forecast)
+install.packages('forecast')
+library(forecast)
+value <- c(1.2,1.7,1.6, 1.2, 1.6, 1.3, 1.5, 1.9, 5.4, 4.2, 5.5, 6.0, 5.6, 6.2, 6.8, 7.1, 7.1, 5.8, 0.0, 5.2, 4.6, 3.6, 3.0, 3.8, 3.1, 3.4, 2.0, 3.1, 3.2, 1.6, 0.6, 3.3, 4.9, 6.5, 5.3, 3.5, 5.3, 7.2, 7.4, 7.3, 7.2, 4.0, 6.1, 4.3, 4.0, 2.4, 0.4, 2.4, 1.2,1.7,1.6, 1.2, 1.6, 1.3, 1.5, 1.9, 5.4, 4.2, 5.5, 6.0, 5.6, 6.2, 6.8, 7.1, 7.1, 5.8, 0.0, 5.2, 4.6, 3.6, 3.0, 3.8, 3.1, 3.4, 2.0, 3.1, 3.2, 1.6, 0.6, 3.3, 4.9, 6.5, 5.3, 3.5, 5.3, 7.2, 7.4, 7.3, 7.2, 4.0, 6.1, 4.3, 4.0, 2.4, 0.4, 2.4)
+length(value)
+sensor <- ts(value,frequency=24)
+sensor
+fit <- auto.arima(sensor)#
+fcast <- forecast(fit)#
+plot(fcast)
+grid()
+fcast
+dim(fcast)
+help(ts)
+values=Bn[1:index]
+length(values)
+fit = ts(values,frequnecy=1)
+fit = ts(values,frequency=1)
+help(forecase)
+help(forecast)
+fsensor <- ts(values,frequency=1)
+sensor <- ts(values,frequency=1)
+fit <- auto.arima(sensor)
+fcast <- forecast(fit,h=24)
+fcast
+plot(fcast)
+index
+plot(fcast[(330605-24):fcast[330605+24]])
+plot(fcast,xlim=c((330605-24),(330605+24)))
+lines(Bn[(index-24):index+24],col='red')
+length(Bn)
+lines(Bn,col='red')
+date1
+wwindow=24
+xmin = date1 - wwindow*3600.#
+  xmax = date1 + wwindow*3600.
+xmin
+xmax
+## This is in terms of dates#
+xmin = index - wwindow * 2600#
+xmax = index + wwindow * 3600#
+#
+## and this is in terms of the hourly data points#
+hhmin = index - wwindow#
+hhmax = index + wwindow#
+#
+plot(fcast,xlim=c(hhmin,hhmax),ylim=c(-bmax,bmax),xaxt='n')#
+lines(Bn[xmin:xmax],col='red')#
+lines(h=-5.0,col='red',lwd=1,lty=2)#
+abline(v=index,lwd=3,col='red')#
+axis.POSIXct(1,at = seq(xmin,xmax, by = "day"), format = "%m/%d/%y")
+plot(fcast,xlim=c(hhmin,hhmax),ylim=c(-bmax,bmax),xaxt='n')#
+lines(Bn[xmin:xmax],col='red')#
+abline(h=-5.0,col='red',lwd=1,lty=2)#
+abline(v=index,lwd=3,col='red')#
+axis.POSIXct(1,at = seq(xmin,xmax, by = "day"), format = "%m/%d/%y")
+xmin
+## This is in terms of dates#
+xmin = index - wwindow * 2600#
+xmax = index + wwindow * 3600#
+#
+## and this is in terms of the hourly data points#
+hhmin = index - wwindow#
+hhmax = index + wwindow#
+#
+plot(fcast,xlim=c(hhmin,hhmax),ylim=c(-bmax,bmax),xaxt='n')#
+lines(Bn[xmin:xmax],col='red')#
+abline(h=-5.0,col='red',lwd=1,lty=2)#
+abline(v=index,lwd=3,col='red')#
+axis.POSIXct(1,at = seq(xmin,xmax, by = "day"), format = "%m/%d/%y")
+xmin
+wwindow=24
+## This is in terms of dates#
+xmin = date1 - wwindow * 2600#
+xmax = date1 + wwindow * 3600#
+#
+## and this is in terms of the hourly data points#
+hhmin = index - wwindow#
+hhmax = index + wwindow#
+#
+plot(fcast,xlim=c(hhmin,hhmax),ylim=c(-bmax,bmax),xaxt='n')#
+lines(Bn[xmin:xmax],col='red')#
+abline(h=-5.0,col='red',lwd=1,lty=2)#
+abline(v=index,lwd=3,col='red')#
+axis.POSIXct(1,at = seq(xmin,xmax, by = "day"), format = "%m/%d/%y")
+plot(fcast,xlim=c(hhmin,hhmax),ylim=c(-bmax,bmax),xaxt='n')#
+lines(Bn[xmin:xmax],col='red')#
+abline(h=-5.0,col='red',lwd=1,lty=2)#
+abline(v=index,lwd=3,col='red')#
+axis.POSIXct(1,at=seq(xmin,xmax,by=1),label = seq(xmin,xmax, by = "day"), format = "%m/%d/%y")
+plot(fcast,xlim=c(hhmin,hhmax),ylim=c(-bmax,bmax),xaxt='n')#
+lines(Bn[xmin:xmax],col='red')#
+abline(h=-5.0,col='red',lwd=1,lty=2)#
+abline(v=index,lwd=3,col='red')#
+axis.POSIXct(1,at=seq(hhmin,hhmax,by=1),label = seq(xmin,xmax, by = "day"), format = "%m/%d/%y")
+help(axis.POSIXct)
+fcast
+is.data.frame
+is.data.frame(fcast)
+info(fcast)
+summary(fcast)
+plot(fcast,xlim=c(hhmin,hhmax),ylim=c(-bmax,bmax),xaxt='n')#
+lines(Bn[xmin:xmax],col='red')#
+abline(h=-5.0,col='red',lwd=1,lty=2)#
+abline(v=index,lwd=3,col='red')#
+par(new=TRUE)#
+plot(Bn[xmin:xmax],xlim=c(xmin,xmax)col='red',,ylim=c(-bmax,bmax),xaxt='n')#
+axis.POSIXct(1,at = seq(xmin,xmax, by = "day"), format = "%m/%d/%y")
+plot(fcast,xlim=c(hhmin,hhmax),ylim=c(-bmax,bmax),xaxt='n')#
+lines(Bn[xmin:xmax],col='red')#
+abline(h=-5.0,col='red',lwd=1,lty=2)#
+abline(v=index,lwd=3,col='red')#
+par(new=TRUE)#
+plot(Bn[xmin:xmax],xlim=c(xmin,xmax),col='red',,ylim=c(-bmax,bmax),xaxt='n')#
+axis.POSIXct(1,at = seq(xmin,xmax, by = "day"), format = "%m/%d/%y")
+date1
+length(hhmin:hhmax)
+length(seq(xmin,xmax, by = "hour"))
+xmin
+xmax
+## This is in terms of dates#
+xmin = date1 - wwindow * 3600#
+xmax = date1 + wwindow * 3600#
+#
+## and this is in terms of the hourly data points#
+hhmin = index - wwindow#
+hhmax = index + wwindow#
+#
+plot(fcast,xlim=c(hhmin,hhmax),ylim=c(-bmax,bmax),xaxt='n')#
+lines(Bn[xmin:xmax],col='red')#
+abline(h=-5.0,col='red',lwd=1,lty=2)#
+abline(v=index,lwd=3,col='red')#
+par(new=TRUE)#
+plot(Bn[xmin:xmax],xlim=c(xmin,xmax),col='red',ylim=c(-bmax,bmax),xaxt='n')#
+axis.POSIXct(1,at = seq(xmin,xmax, by = "day"), format = "%m/%d/%y")
+bmax = 20#
+ymd = "2000-09-18" # this corresponds with the 262 event from proposal#
+hhour = 4#
+mmin = 0#
+ssec = 0#
+#
+bmax = 20#
+#
+date1 = ISOdate(ymd,hhour,mmin,ssec,tz="UTC")#
+#
+index = which(ddate == date1)#
+#
+values <- Bn[1:index]#
+#
+sensor <- ts(values,frequency=1)#
+#
+fit <- auto.arima(sensor)#
+#
+fcast <- forecast(fit,h=wwindow)#
+#
+## This is in terms of dates#
+xmin = date1 - wwindow * 3600#
+xmax = date1 + wwindow * 3600#
+isub  = which((ddate >=xmin) & (ddate <= xmax))#
+## and this is in terms of the hourly data points#
+hhmin = index - wwindow#
+hhmax = index + wwindow#
+#
+plot(fcast,xlim=c(hhmin,hhmax),ylim=c(-bmax,bmax),xaxt='n')#
+lines(Bn[xmin:xmax],col='red')#
+abline(h=-5.0,col='red',lwd=1,lty=2)#
+abline(v=index,lwd=3,col='red')#
+par(new=TRUE)#
+plot(Bn[isub],xlim=c(xmin,xmax),col='red',ylim=c(-bmax,bmax),xaxt='n')#
+axis.POSIXct(1,at = seq(xmin,xmax, by = "day"), format = "%m/%d/%y")
+plot(fcast,xlim=c(hhmin,hhmax),ylim=c(-bmax,bmax),xaxt='n')#
+lines(Bn[hhmin:hhmax],col='red')#
+abline(h=-5.0,col='red',lwd=1,lty=2)#
+abline(v=index,lwd=3,col='red')#
+par(new=TRUE)#
+plot(Bn[isub],xlim=c(xmin,xmax),col='red',ylim=c(-bmax,bmax),xaxt='n')#
+axis.POSIXct(1,at = seq(xmin,xmax, by = "day"), format = "%m/%d/%y")
+plot(fcast,xlim=c(hhmin,hhmax),ylim=c(-bmax,bmax),xaxt='n')#
+lines(Bn[hhmin:hhmax],col='red')
+source("projectZed.R")
+dev.off()
+source("projectZed.R")
+date1
+rm(list=ls())#
+#
+graphics.off()#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+#
+# projectZed.R#
+#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+#++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++#
+#
+# DRIVER ROUTINE#
+#
+library(date)#
+#library(data.table)#
+library(hydroGOF)  #
+library(Hmisc)#
+library(pander)#
+library(caTools) # load necessary libraries#
+library(zoo)#
+library(binhf)#
+library(dtw)#
+#
+source("~/Dropbox/ProjectZed/michal/R/libPRojectZed.R")#
+#
+readDataFlag = T#
+#
+# choose which data to read: #
+#
+sDataSet = "OMNI" # "ACE" # "OMNI"#
+#
+# choose variable to plot (Bn, Vr, Temp, and Density)#
+#
+plotB    = 'yes'#
+plotV    = 'no'#
+plotT    = 'no'#
+plotN    = 'no'#
+#
+plotRealizations = 'yes'#
+plotQuantiles = 'yes'#
+# set default parameters / turn on various models#
+zero = T # 1#
+psychic = F # 2#
+persistence = F # 3#
+recurrence = F # 4#
+pattrec = T # 5#
+cme1 = F # 6#
+turbulence = F # 7#
+mcmc = F # 8#
+ucsd = F # 9#
+savani = F # 10#
+#
+models = c(zero, psychic, persistence, recurrence, pattrec, cme1, turbulence, mcmc, ucsd, savani)#
+smodels = c("Zero", "Psychic", "Persistence", "Recurrence", "Patt. Rec.", "CME1", "Turbulence", "MCMC", "UCSD", "Savani")
+pdf = FALSE#
+#
+if (pdf == TRUE)#
+	pdf(file='figure2a.pdf',width=8,height=7)#
+event = 3#
+#
+nsmooth = 0 #
+bmax    = 20.0#
+#
+if (event == 1) { #
+   ymd     = "2007-03-30" # Bernie's ambient field intervals - CR 2055#
+   hhour   = 0#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 48#
+   bmax    = 5#
+}#
+#
+if (event == 3) { # Upper panel of Figure 2#
+#
+   ymd     = "2011-03-30" #
+   hhour   = 12#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 24#
+   bmax    = 30#
+}#
+#
+if (event == 4) { # Lower panel of Figure 2#
+#
+   ymd     = "2012-06-17" #
+   hhour   = 8 #
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 24#
+   bmax    = 30#
+}#
+if (event == 5) { # Here's a good example for Pattern recognition#
+#
+   ymd     = "2000-09-18" # this corresponds with the 262 event from proposal#
+   hhour   = 4#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 24#
+   bmax    = 20#
+}#
+#
+if (event == 6) {#
+      ymd = '2000-07-14' # The bastille day event#
+      hhour= 12#
+      mmin = 0#
+      ssec = 0#
+      wwindow = 72#
+      bmax = 50#
+}#
+#
+if (event == 7) { #
+   ymd     = "2007-03-30" # turbulence test#
+   hhour   = 0#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 36#
+   bmax    = 5#
+}#
+#
+if (event == 8) {#
+   ymd     = "2002-04-18" # Flux rope with nice rotation in Bz#
+   hhour   = 11#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 22#
+   bmax    = 20#
+}#
+if (event == 9) { #
+   ymd     = "2007-03-30" # Bernie's ambient field intervals - CR 2055#
+   hhour   = 0#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 27*24#
+   nsmooth = 8 # need to smooth the data to better compare with model results#
+   bmax    = 2#
+}#
+#
+if (event == 99) {#
+   ymd     = "2007-04-26" # Bernie's ambient field intervals - CR 2056#
+   hhour   = 0#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 27*24#
+   nsmooth = 24 # need to smooth the data to better compare with model results#
+   bmax    = 2#
+}#
+if (event == 10) {#
+#
+   ymd     = "2014-01-08" # Savani event 1#
+   hhour   = 12#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 40#
+   bmax    = 10#
+}#
+## Four events for Figure 10#
+#
+if (event == 11) {#
+   ymd     = "1996-08-22" # Top Left panel-a#
+   hhour   = 0#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 24#
+   bmax    = 30	#
+}#
+if (event == 12) {#
+   ymd     = "2002-08-20" # Top Right panel-b#
+   hhour   = 0#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 24 * 6#
+   bmax    = 30	#
+}#
+if (event == 13) {#
+   ymd     = "2008-7-21" # Bottom left panel-c proposed 10-c-2#
+   hhour   = 0#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 24 * 12#
+   bmax    = 30	#
+}#
+ if (event == 14) {#
+   ymd     = "1996-05-30" # Bottom Right panel-d#
+   hhour   = 0#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 24 * 40#
+   bmax    = 30	#
+}#
+# convert the date and time to POSIX value XXX#
+if (readDataFlag == T) {#
+#
+if (sDataSet == "OMNI") {#
+        readData = readMagV_OMNI() # read in the data#
+        ddate = readData$ddate#
+        Bn    = readData$Bn#
+        vr    = readData$vr#
+        np    = readData$np#
+        Temp  = readData$Temp#
+        Br    = readData$Br#
+        Bt    = readData$Bt#
+}#
+#
+if (sDataSet == "ACE") {#
+        readData = readMagV_ACE() # read in the data#
+        ddate = readData$ddate#
+        Bn=readData$Bn#
+        vr = readData$vr#
+}#
+#
+}
+names(readData)
+dim(readData)
+if (sDataSet == "OMNI") {#
+        readData = readMagV_OMNI() # read in the data#
+        ddate = readData$ddate#
+        Bn    = readData$Bn#
+        vr    = readData$vr#
+        np    = readData$np#
+        Temp  = readData$Temp#
+        Br    = readData$Br#
+        Bt    = readData$Bt#
+}
+head(Bn)
+tail(Bn)
+length(Bn)
+# Change outliers to NA's#
+      Bn[Bn==999.9] = NA#
+      vr[vr==9999]  = NA#
+      np[np==999.9] = NA#
+      Temp[Temp==9999999] = NA#
+      Br[Br==999.9] = NA#
+      Bt[Bt=999.9] = NA#
+# plot the Bn model results
+date1
+if (event == 3) { # Upper panel of Figure 2#
+#
+   ymd     = "2011-03-30" #
+   hhour   = 12#
+   mmin    = 0#
+   ssec    = 0#
+   wwindow = 24#
+   bmax    = 30#
+}
+date1 = ISOdate(ymd, hhour, mmin, ssec, tz = "UTC")
+if (plotB == 'yes') {      #
+plotDataBn = plotMag(ddate,Bn,date1=date1,wwindow=wwindow,models=models,smodels=smodels,#
+		nsmooth=nsmooth,bmax=bmax,sc= sDataSet, plotRealizations= plotRealizations, #
+		plotQuantiles= plotQuantiles,legendOn=T)#
+}
+source("libProjectZed.R")
+if (plotB == 'yes') {      #
+plotDataBn = plotMag(ddate,Bn,date1=date1,wwindow=wwindow,models=models,smodels=smodels,#
+		nsmooth=nsmooth,bmax=bmax,sc= sDataSet, plotRealizations= plotRealizations, #
+		plotQuantiles= plotQuantiles,legendOn=T)#
+}
+source("libProjectZed.R")
+if (plotB == 'yes') {      #
+plotDataBn = plotMag(ddate,Bn,date1=date1,wwindow=wwindow,models=models,smodels=smodels,#
+		nsmooth=nsmooth,bmax=bmax,sc= sDataSet, plotRealizations= plotRealizations, #
+		plotQuantiles= plotQuantiles,legendOn=T)#
+}
+source("libProjectZed.R")
+if (plotB == 'yes') {      #
+plotDataBn = plotMag(ddate,Bn,date1=date1,wwindow=wwindow,models=models,smodels=smodels,#
+		nsmooth=nsmooth,bmax=bmax,sc= sDataSet, plotRealizations= plotRealizations, #
+		plotQuantiles= plotQuantiles,legendOn=T)#
+}
+source("libProjectZed.R")
+if (plotB == 'yes') {      #
+plotDataBn = plotMag(ddate,Bn,date1=date1,wwindow=wwindow,models=models,smodels=smodels,#
+		nsmooth=nsmooth,bmax=bmax,sc= sDataSet, plotRealizations= plotRealizations, #
+		plotQuantiles= plotQuantiles,legendOn=T)#
+}
+help(cor)
+var(1:10)
+cor(1:10,rep(5,10))
+cor(1:10,rep(5,10),method='kendall')
+cor(1:10,rep(5,10),method='spearman')
+ccf(1:10,rep(5,10))
+source("projectZed.R")
+source('libProjectZed.R')
+plotDataBn = plotMag(ddate,Bn,date1=date1,wwindow=wwindow,models=models,smodels=smodels,#
+		nsmooth=nsmooth,bmax=bmax,sc= sDataSet, plotRealizations= plotRealizations, #
+		plotQuantiles= plotQuantiles,legendOn=T)
+source('libProjectZed.R')
+plotDataBn = plotMag(ddate,Bn,date1=date1,wwindow=wwindow,models=models,smodels=smodels,#
+		nsmooth=nsmooth,bmax=bmax,sc= sDataSet, plotRealizations= plotRealizations, #
+		plotQuantiles= plotQuantiles,legendOn=T)
+help(plot)
+source('libProjectZed.R')
+plotDataBn = plotMag(ddate,Bn,date1=date1,wwindow=wwindow,models=models,smodels=smodels,#
+		nsmooth=nsmooth,bmax=bmax,sc= sDataSet, plotRealizations= plotRealizations, #
+		plotQuantiles= plotQuantiles,legendOn=T)
+source("projectZed.R")
+# read in the data files#
+rm(list=ls())#
+graphics.off()#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "Bn"  #Bn, vr, Temp, np, Bt, Br#
+#
+wwindow = 24#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+dirName = paste0("corr-coh-",whvar,'-',wwindow,'hr/')#
+setwd(dirName) #
+#
+file_list <- list.files(pattern=".csv")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}#
+# Need to remove all lines with -999.0#
+#
+if (whvar == 'vr' || whvar == 'np' || whvar == 'Temp') {#
+rmv = -999.0#
+dataset <- dataset[!(dataset[,4] %in% rmv),]	#
+}#
+if(whvar == 'Temp' || whvar == 'np') {#
+	dataset = na.omit(dataset)#
+}
+colnames(dataset)
+dataset.names <- colnames(dataset)#
+index <- which(dataset.names == 'coh')#
+dataset.names[index] = 'lsv'#
+colnames(dataset) <- dataset.names
+head(dataset)
+filename = paste0('../new-manuscript-Figures/figure3-',whvar,'-',wwindow,'hr.pdf')#
+pdf(file=filename)#
+plot(dataset[,c(4,5,6,7,8)])#
+dev.off()
+# High Density Scatterplot with Binning#
+x <- dataset$coh#
+y <- dataset$corrPred#
+mtit <- "Hexagonal Binning: LSV v. Predicted Correlation"#
+xtit <- "LSV"#
+ytit <- "Predicted Correlation"#
+bin<-hexbin(x, y, xbins=50) #
+plot(bin, main=mtit,xlab=xtit,ylab=ytit)
+# High Density Scatterplot with Binning#
+x <- dataset$lsv#
+y <- dataset$corrPred#
+mtit <- "Hexagonal Binning: LSV v. Predicted Correlation"#
+xtit <- "LSV"#
+ytit <- "Predicted Correlation"#
+bin<-hexbin(x, y, xbins=50) #
+plot(bin, main=mtit,xlab=xtit,ylab=ytit)
+filename = paste0('../new-manuscript-Figures/figure6-',whvar,'-',wwindow,'hr.pdf')#
+pdf(file=filename)#
+plot(bin,xlab=xtit,ylab=ytit,main=mtit)#
+dev.off()
+# read in the data files#
+rm(list=ls())#
+graphics.off()#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "Temp"  #Bn, vr, Temp, np, Bt, Br#
+#
+wwindow = 6#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+dirName = paste0("corr-coh-",whvar,'-',wwindow,'hr/')#
+setwd(dirName) #
+#
+file_list <- list.files(pattern=".csv")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}#
+# Need to remove all lines with -999.0#
+#
+if (whvar == 'vr' || whvar == 'np' || whvar == 'Temp') {#
+rmv = -999.0#
+dataset <- dataset[!(dataset[,4] %in% rmv),]	#
+}#
+if(whvar == 'Temp' || whvar == 'np') {#
+	dataset = na.omit(dataset)#
+}
+./
+)
+getwd()
+setwd("../")
+# read in the data files#
+rm(list=ls())#
+graphics.off()#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "Temp"  #Bn, vr, Temp, np, Bt, Br#
+#
+wwindow = 6#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+dirName = paste0("corr-coh-",whvar,'-',wwindow,'hr/')#
+setwd(dirName) #
+#
+file_list <- list.files(pattern=".csv")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}#
+# Need to remove all lines with -999.0#
+#
+if (whvar == 'vr' || whvar == 'np' || whvar == 'Temp') {#
+rmv = -999.0#
+dataset <- dataset[!(dataset[,4] %in% rmv),]	#
+}#
+if(whvar == 'Temp' || whvar == 'np') {#
+	dataset = na.omit(dataset)#
+}
+colnames(dataset)
+head(dataset)
+tail(dataset)
+## replace 'coh' with 'lsv' (Large Scale Variation)#
+#
+dataset.names <- colnames(dataset)#
+index <- which(dataset.names == 'coh')#
+dataset.names[index] = 'lsv'#
+colnames(dataset) <- dataset.names
+filename = paste0('../new-manuscript-Figures/figure3-',whvar,'-',wwindow,'hr.pdf')#
+pdf(file=filename)#
+plot(dataset[,c(4,5,6,7,8)])#
+dev.off()
+# High Density Scatterplot with Binning#
+x <- dataset$lsv#
+y <- dataset$corrPred#
+mtit <- "Hexagonal Binning: LSV v. Predicted Correlation"#
+xtit <- "LSV"#
+ytit <- "Predicted Correlation"#
+bin<-hexbin(x, y, xbins=50) #
+plot(bin, main=mtit,xlab=xtit,ylab=ytit)
+filename = paste0('../new-manuscript-Figures/figure6-',whvar,'-',wwindow,'hr.pdf')#
+pdf(file=filename)#
+plot(bin,xlab=xtit,ylab=ytit,main=mtit)#
+dev.off()
+# High Density Scatterplot with Binning#
+#
+x <- dataset$mse#
+y <- dataset$mseZero#
+mtit <- "Hexagonal Binning: MSE v. MSE-Baseline"#
+#
+if (whvar == 'Bn') {#
+xtit <- expression("MSE" ~(nT^{2}))#
+ytit <- expression("MSE-Baseline" ~(nT^{2}))#
+}#
+x1 <- c(0,20)#
+y1 <- x1#
+xmax = 10 # for Bn, Br, Bt#
+#
+if (whvar == "Bn" || whvar == "Br" || whvar == "Bt") {#
+	xmax = 10#
+	xtit <- expression("MSE" ~(nT^{2}))#
+	ytit <- expression("MSE-Baseline" ~(nT^{2}))#
+}#
+#
+if (whvar == 'vr') {#
+	xmax = 1e4 #2000#
+	xtit <- expression("MSE" ~(km^{2}/s^{2}))#
+	ytit <- expression("MSE-Baseline" ~(km^{2}/s^{2}))#
+#
+}#
+#
+if (whvar == 'Temp') {#
+	xmax = 1e5 #1e10 for figure 10a and 1e5 for figure 10b#
+	xtit <- expression("MSE" ~(K^{2}))#
+	ytit <- expression("MSE-Baseline" ~(K^{2}))		#
+}#
+#
+if (whvar == 'np') {#
+	xmax = 20 #use 50 for figure 9a and 20 for 9c#
+	xtit <- expression("MSE" ~(N^{2}/cm^{6}))#
+	ytit <- expression("MSE-Baseline" ~(N^{2}/cm^{6}))	#
+}#
+xsub = ((x <= xmax) & (y <= xmax))#
+bin<-hexbin(x[xsub], y[xsub], xbins=50,xbnds=c(0,xmax), ybnds=c(0,xmax))
+head(x)
+head(y)
+rf <- colorRampPalette(rev(brewer.pal(11,'Spectral')))#
+#
+plot(bin, main=mtit,xlab="",ylab='',colramp=rf)#
+title(xlab=xtit,line=-2,cex.lab=1)#
+title(ylab=ytit,line=6,cex.lab=1)
+head(dataset$mse)
+head(dataset$mseZero)
+setwd("../")
+source("projectZed.R")
+source("libProjectZed.R")
+# plot the Temp model results#
+if (plotT == 'yes') {  #
+   #dev.new()   #
+   plotDataT = plotTemp(ddate,Temp,date1=date1,wwindow=wwindow,models=models,smodels=smodels,#
+   nsmooth=nsmooth,sc=sDataSet,plotRealizations= plotRealizations, #
+		plotQuantiles= plotQuantiles,legendOn=T)#
+}
+head(readData)
+head(readData$Temp)
+if (whvar == 'Temp') {#
+	xmax = 1e10 #1e10 for figure 10a and 1e5 for figure 10b#
+	xtit <- expression("MSE" ~(K^{2}))#
+	ytit <- expression("MSE-Baseline" ~(K^{2}))		#
+}#
+#
+if (whvar == 'np') {#
+	xmax = 20 #use 50 for figure 9a and 20 for 9c#
+	xtit <- expression("MSE" ~(N^{2}/cm^{6}))#
+	ytit <- expression("MSE-Baseline" ~(N^{2}/cm^{6}))	#
+}#
+xsub = ((x <= xmax) & (y <= xmax))#
+bin<-hexbin(x[xsub], y[xsub], xbins=50,xbnds=c(0,xmax), ybnds=c(0,xmax))
+# read in the data files#
+rm(list=ls())#
+graphics.off()#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "Temp"  #Bn, vr, Temp, np, Bt, Br#
+#
+wwindow = 6#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+dirName = paste0("corr-coh-",whvar,'-',wwindow,'hr/')#
+setwd(dirName) #
+#
+file_list <- list.files(pattern=".csv")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}#
+# Need to remove all lines with -999.0#
+#
+if (whvar == 'vr' || whvar == 'np' || whvar == 'Temp') {#
+rmv = -999.0#
+dataset <- dataset[!(dataset[,4] %in% rmv),]	#
+}#
+if(whvar == 'Temp' || whvar == 'np') {#
+	dataset = na.omit(dataset)#
+}
+if (whvar == 'Temp') {#
+rmv = 9999999#
+dataset <- dataset[!(dataset[,4] %in% rmv),]	#
+}#
+#
+if(whvar == 'Temp' || whvar == 'np') {#
+	dataset = na.omit(dataset)#
+}#
+#
+## replace 'coh' with 'lsv' (Large Scale Variation)#
+#
+dataset.names <- colnames(dataset)#
+index <- which(dataset.names == 'coh')#
+dataset.names[index] = 'lsv'#
+colnames(dataset) <- dataset.names
+head(dataset)
+range(dataset$mse)
+range(dataset$mseZero)
+# High Density Scatterplot with Binning#
+x <- dataset$lsv#
+y <- dataset$corrPred#
+mtit <- "Hexagonal Binning: LSV v. Predicted Correlation"#
+xtit <- "LSV"#
+ytit <- "Predicted Correlation"#
+bin<-hexbin(x, y, xbins=50) #
+plot(bin, main=mtit,xlab=xtit,ylab=ytit)
+filename = paste0('../new-manuscript-Figures/figure6-',whvar,'-',wwindow,'hr.pdf')#
+pdf(file=filename)#
+plot(bin,xlab=xtit,ylab=ytit,main=mtit)#
+dev.off()#
+#
+# High Density Scatterplot with Binning#
+#
+x <- dataset$mse#
+y <- dataset$mseZero#
+mtit <- "Hexagonal Binning: MSE v. MSE-Baseline"#
+#
+if (whvar == 'Bn') {#
+xtit <- expression("MSE" ~(nT^{2}))#
+ytit <- expression("MSE-Baseline" ~(nT^{2}))#
+}
+if (whvar == 'Temp') {#
+	xmax = 1e10 #1e10 for figure 10a and 1e12 for figure 10b#
+	xtit <- expression("MSE" ~(K^{2}))#
+	ytit <- expression("MSE-Baseline" ~(K^{2}))		#
+}#
+#
+if (whvar == 'np') {#
+	xmax = 20 #use 50 for figure 9a and 20 for 9c#
+	xtit <- expression("MSE" ~(N^{2}/cm^{6}))#
+	ytit <- expression("MSE-Baseline" ~(N^{2}/cm^{6}))	#
+}#
+xsub = ((x <= xmax) & (y <= xmax))
+length(xsub)
+dim(dataset)
+bin<-hexbin(x[xsub], y[xsub], xbins=50,xbnds=c(0,xmax), ybnds=c(0,xmax))
+# nice colour version#
+#
+rf <- colorRampPalette(rev(brewer.pal(11,'Spectral')))#
+#
+plot(bin, main=mtit,xlab="",ylab='',colramp=rf)#
+title(xlab=xtit,line=-2,cex.lab=1)#
+title(ylab=ytit,line=6,cex.lab=1)
+filename = paste0('../new-manuscript-Figures/figure4-',whvar,'-',wwindow,'hr.pdf')#
+#par(mar=c(3,7,3,5))#
+pdf(file=filename)#
+#
+plot(bin, main=mtit,xlab=xtit,ylab=ytit,colramp=rf)#
+dev.off()
+# read in the data files#
+rm(list=ls())#
+graphics.off()#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "Temp"  #Bn, vr, Temp, np, Bt, Br#
+#
+wwindow = 6#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+dirName = paste0("corr-coh-",whvar,'-',wwindow,'hr/')#
+setwd(dirName) #
+#
+file_list <- list.files(pattern=".csv")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}#
+# Need to remove all lines with -999.0#
+#
+if (whvar == 'vr' || whvar == 'np') {#
+rmv = -999.0#
+dataset <- dataset[!(dataset[,4] %in% rmv),]	#
+}#
+#
+if (whvar == 'Temp') {#
+rmv = 9999999#
+dataset <- dataset[!(dataset[,4] %in% rmv),]	#
+}#
+#
+if(whvar == 'Temp' || whvar == 'np') {#
+	dataset = na.omit(dataset)#
+}#
+#
+## replace 'coh' with 'lsv' (Large Scale Variation)#
+#
+dataset.names <- colnames(dataset)#
+index <- which(dataset.names == 'coh')#
+dataset.names[index] = 'lsv'#
+colnames(dataset) <- dataset.names
+setwd("..")
+# read in the data files#
+rm(list=ls())#
+graphics.off()#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "Temp"  #Bn, vr, Temp, np, Bt, Br#
+#
+wwindow = 6#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+dirName = paste0("corr-coh-",whvar,'-',wwindow,'hr/')#
+setwd(dirName) #
+#
+file_list <- list.files(pattern=".csv")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}#
+# Need to remove all lines with -999.0#
+#
+if (whvar == 'vr' || whvar == 'np') {#
+rmv = -999.0#
+dataset <- dataset[!(dataset[,4] %in% rmv),]	#
+}#
+#
+if (whvar == 'Temp') {#
+rmv = 9999999#
+dataset <- dataset[!(dataset[,4] %in% rmv),]	#
+}#
+#
+if(whvar == 'Temp' || whvar == 'np') {#
+	dataset = na.omit(dataset)#
+}#
+#
+## replace 'coh' with 'lsv' (Large Scale Variation)#
+#
+dataset.names <- colnames(dataset)#
+index <- which(dataset.names == 'coh')#
+dataset.names[index] = 'lsv'#
+colnames(dataset) <- dataset.names
+# High Density Scatterplot with Binning#
+x <- dataset$lsv#
+y <- dataset$corrPred#
+mtit <- "Hexagonal Binning: LSV v. Predicted Correlation"#
+xtit <- "LSV"#
+ytit <- "Predicted Correlation"#
+bin<-hexbin(x, y, xbins=50) #
+plot(bin, main=mtit,xlab=xtit,ylab=ytit)#
+#
+filename = paste0('../new-manuscript-Figures/figure6-',whvar,'-',wwindow,'hr.pdf')#
+pdf(file=filename)#
+plot(bin,xlab=xtit,ylab=ytit,main=mtit)#
+dev.off()#
+#
+# High Density Scatterplot with Binning#
+#
+x <- dataset$mse#
+y <- dataset$mseZero#
+mtit <- "Hexagonal Binning: MSE v. MSE-Baseline"
+if (whvar == 'Bn') {#
+xtit <- expression("MSE" ~(nT^{2}))#
+ytit <- expression("MSE-Baseline" ~(nT^{2}))#
+}#
+x1 <- c(0,20)#
+y1 <- x1#
+xmax = 10 # for Bn, Br, Bt#
+#
+if (whvar == "Bn" || whvar == "Br" || whvar == "Bt") {#
+	xmax = 10#
+	xtit <- expression("MSE" ~(nT^{2}))#
+	ytit <- expression("MSE-Baseline" ~(nT^{2}))#
+}#
+#
+if (whvar == 'vr') {#
+	xmax = 1e4 #2000#
+	xtit <- expression("MSE" ~(km^{2}/s^{2}))#
+	ytit <- expression("MSE-Baseline" ~(km^{2}/s^{2}))#
+#
+}#
+#
+if (whvar == 'Temp') {#
+	xmax = 1e10 #1e10 for figure 10a and 1e12 for figure 10b#
+	xtit <- expression("MSE" ~(K^{2}))#
+	ytit <- expression("MSE-Baseline" ~(K^{2}))		#
+}#
+#
+if (whvar == 'np') {#
+	xmax = 20 #use 50 for figure 9a and 20 for 9c#
+	xtit <- expression("MSE" ~(N^{2}/cm^{6}))#
+	ytit <- expression("MSE-Baseline" ~(N^{2}/cm^{6}))	#
+}#
+xsub = ((x <= xmax) & (y <= xmax))#
+bin<-hexbin(x[xsub], y[xsub], xbins=50,xbnds=c(0,xmax), ybnds=c(0,xmax)) #
+#
+# nice colour version#
+#
+rf <- colorRampPalette(rev(brewer.pal(11,'Spectral')))#
+#
+plot(bin, main=mtit,xlab=xtit,ylab=ytit,colramp=rf)#
+title(xlab=xtit,line=-2,cex.lab=1)#
+title(ylab=ytit,line=6,cex.lab=1)
+range(x)
+getwd()
+setwd("../")
+source("projectZed.R")
+q()
+getwd()
+source("anal-corr-coh.R")
+# read in the data files#
+rm(list=ls())#
+graphics.off()#
+#
+library(RColorBrewer)#
+library(hexbin)#
+#
+whvar = "Bn"  #Bn, vr, Temp, np, Bt, Br#
+#
+wwindow = 24#
+#
+if (exists("dataset")){rm(dataset)}#
+#
+dirName = paste0("corr-coh-",whvar,'-',wwindow,'hr/')#
+setwd(dirName) #
+#
+file_list <- list.files(pattern=".csv")#
+for (file in file_list){#
+  # if the merged dataset doesn't exist, create it#
+  if (!exists("dataset")){#
+    dataset <- read.csv(file, header=TRUE)#
+  }#
+  # if the merged dataset does exist, append to it#
+  if (exists("dataset")){#
+    temp_dataset <-read.csv(file, header=TRUE)#
+    dataset<-rbind(dataset, temp_dataset)#
+    rm(temp_dataset)#
+  }#
+}#
+# Need to remove all lines with -999.0#
+#
+if (whvar == 'vr' || whvar == 'np' || whvar == 'Temp') {#
+rmv = -999.0#
+dataset <- dataset[!(dataset[,4] %in% rmv),]	#
+}#
+#
+if(whvar == 'Temp' || whvar == 'np') {#
+	dataset = na.omit(dataset)#
+}#
+#
+## replace 'coh' with 'lsv' (Large Scale Variation)#
+## and mseZero with mseBaseline#
+#
+dataset.names <- colnames(dataset)#
+index <- which(dataset.names == 'coh')#
+dataset.names[index] = 'lsv'#
+colnames(dataset) <- dataset.names#
+index <- which(dataset.names == 'mseZero')#
+dataset.names[index] = 'mseBaseline'#
+colnames(dataset) <- dataset.names
+ls()
+# High Density Scatterplot with Binning#
+x <- dataset$lsv#
+y <- dataset$corrPred#
+mtit <- "Hexagonal Binning: LSV v. Predicted Correlation"#
+xtit <- "LSV"#
+ytit <- "Predicted Correlation"#
+bin<-hexbin(x, y, xbins=50)
+filename = paste0('../new-manuscript-Figures/figure6-',whvar,'-',wwindow,'hr.pdf')#
+pdf(file=filename)#
+plot(bin,xlab=xtit,ylab=ytit,main=mtit)#
+dev.off()
+x <- dataset$mse#
+y <- dataset$mseBmseBaseline#
+mtit <- "Hexagonal Binning: MSE v. MSE-Baseline"#
+#
+if (whvar == 'Bn') {#
+xtit <- expression("MSE" ~(nT^{2}))#
+ytit <- expression("MSE-Baseline" ~(nT^{2}))#
+}#
+x1 <- c(0,20)#
+y1 <- x1#
+xmax = 10 # for Bn, Br, Bt#
+#
+if (whvar == "Bn" || whvar == "Br" || whvar == "Bt") {#
+	xmax = 10#
+	xtit <- expression("MSE" ~(nT^{2}))#
+	ytit <- expression("MSE-Baseline" ~(nT^{2}))#
+}#
+#
+if (whvar == 'vr') {#
+	xmax = 1e4 #2000#
+	xtit <- expression("MSE" ~(km^{2}/s^{2}))#
+	ytit <- expression("MSE-Baseline" ~(km^{2}/s^{2}))#
+#
+}#
+#
+if (whvar == 'Temp') {#
+	xmax = 1e10 #1e10 for figure 10a and 1e12 for figure 10b#
+	xtit <- expression("MSE" ~(K^{2}))#
+	ytit <- expression("MSE-Baseline" ~(K^{2}))		#
+}#
+#
+if (whvar == 'np') {#
+	xmax = 20 #use 50 for figure 9a and 20 for 9c#
+	xtit <- expression("MSE" ~(N^{2}/cm^{6}))#
+	ytit <- expression("MSE-Baseline" ~(N^{2}/cm^{6}))	#
+}#
+xsub = ((x <= xmax) & (y <= xmax))#
+bin<-hexbin(x[xsub], y[xsub], xbins=50,xbnds=c(0,xmax), ybnds=c(0,xmax)) #
+#
+# nice colour version#
+#
+rf <- colorRampPalette(rev(brewer.pal(11,'Spectral')))#
+#
+plot(bin, main=mtit,xlab=xtit,ylab=ytit,colramp=rf)#
+title(xlab=xtit,line=-2,cex.lab=1)#
+title(ylab=ytit,line=6,cex.lab=1)#
+filename = paste0('../new-manuscript-Figures/figure4-',whvar,'-',wwindow,'hr.pdf')#
+#par(mar=c(3,7,3,5))#
+pdf(file=filename)#
+#
+plot(bin, main=mtit,xlab=xtit,ylab=ytit,colramp=rf)#
+dev.off()
+length(x)
+length(y)
+x <- dataset$mse#
+y <- dataset$mseBaseline#
+mtit <- "Hexagonal Binning: MSE v. MSE-Baseline"#
+#
+if (whvar == 'Bn') {#
+xtit <- expression("MSE" ~(nT^{2}))#
+ytit <- expression("MSE-Baseline" ~(nT^{2}))#
+}#
+x1 <- c(0,20)#
+y1 <- x1#
+xmax = 10 # for Bn, Br, Bt#
+#
+if (whvar == "Bn" || whvar == "Br" || whvar == "Bt") {#
+	xmax = 10#
+	xtit <- expression("MSE" ~(nT^{2}))#
+	ytit <- expression("MSE-Baseline" ~(nT^{2}))#
+}#
+#
+if (whvar == 'vr') {#
+	xmax = 1e4 #2000#
+	xtit <- expression("MSE" ~(km^{2}/s^{2}))#
+	ytit <- expression("MSE-Baseline" ~(km^{2}/s^{2}))#
+#
+}#
+#
+if (whvar == 'Temp') {#
+	xmax = 1e10 #1e10 for figure 10a and 1e12 for figure 10b#
+	xtit <- expression("MSE" ~(K^{2}))#
+	ytit <- expression("MSE-Baseline" ~(K^{2}))		#
+}#
+#
+if (whvar == 'np') {#
+	xmax = 20 #use 50 for figure 9a and 20 for 9c#
+	xtit <- expression("MSE" ~(N^{2}/cm^{6}))#
+	ytit <- expression("MSE-Baseline" ~(N^{2}/cm^{6}))	#
+}#
+xsub = ((x <= xmax) & (y <= xmax))#
+bin<-hexbin(x[xsub], y[xsub], xbins=50,xbnds=c(0,xmax), ybnds=c(0,xmax)) #
+#
+# nice colour version#
+#
+rf <- colorRampPalette(rev(brewer.pal(11,'Spectral')))#
+#
+plot(bin, main=mtit,xlab=xtit,ylab=ytit,colramp=rf)#
+title(xlab=xtit,line=-2,cex.lab=1)#
+title(ylab=ytit,line=6,cex.lab=1)#
+filename = paste0('../new-manuscript-Figures/figure4-',whvar,'-',wwindow,'hr.pdf')#
+#par(mar=c(3,7,3,5))#
+pdf(file=filename)#
+#
+plot(bin, main=mtit,xlab=xtit,ylab=ytit,colramp=rf)#
+dev.off()
+colCoh = dataset$lsv / max(dataset$lsv)#
+#
+# plots points with red line slope=1#
+plot(x,y,pch=16,xlim=c(0,xmax),ylim=c(0,xmax),xlab=xtit,ylab=ytit,col = gray(colCoh))#
+abline(0,1,col="red")#
+#
+ratioMSE = x/y#
+xr1 = c(0,2.)#
+nbreak = 500#
+#
+if (whvar == "Bn" || whvar == "Br" || whvar == "bt") {#
+	nbreak = 500#
+}#
+#
+if (whvar == 'vr') {#
+	nbreak = 800#
+}#
+#
+if (whvar == 'Temp') {#
+	nbreak = 1000 # 600 for figure 10b and 1000 for figure 10d#
+}#
+if (whvar == 'np') {#
+	xr1 = c(0,2)#
+	nbreak=5000#
+}#
+#
+hist(ratioMSE,breaks=nbreak,xlab="MSE / MSE-Baseline",xlim=xr1,main="Ratio of MSE to MSE-Baseline")#
+#
+filename = paste0('../new-manuscript-Figures/figure5-',whvar,'-',wwindow,'hr.pdf')#
+pdf(file=filename)#
+hist(ratioMSE,breaks=nbreak,xlab="MSE / MSE-Baseline",xlim=xr1,main="Ratio of MSE to MSE-Baseline")#
+dev.off()
