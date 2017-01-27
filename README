@@ -12,7 +12,7 @@ The R packages: date, hex bin, hydroGOF, Hmisc, RColorBrewer, zoo (and their dep
 Cloning
 ———————————
 To clone from the common line use:
-%git clone 
+%git clone https://github.com/predsci/projectzed.git
 
 ———————————
 Running 
