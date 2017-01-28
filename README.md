@@ -1,24 +1,35 @@
-# projectzed
-A gitHub Repository including all the data and results needed to make figures 1-10 of the ‘Forecasting the Properties of the Solar Wind using Simple Pattern Recognition’ manuscript by Riley et al.
-See the README file for more details
+
+A gitHub Repository including all the data and results needed to make figures 1-10 of
+the ‘Forecasting the Properties of the Solar Wind using Simple Pattern Recognition’ manuscript by Riley et al.
 
 ———————————
 Requirements
 ———————————
+
 The R software package (version 3.2 or higher)
-The R packages: date, hex bin, hydroGOF, Hmisc, RColorBrewer, zoo (and their dependencies).
+The R packages: batch, date, hex bin, hydroGOF, Hmisc, Metrics, RColorBrewer, zoo (and their dependencies).
+Python - Version 2.7 and up.  Needed only if the User wants to create the already provided results for figure 3-7, 9-10
 
 ———————————
 Cloning
 ———————————
-To clone from the common line use:
+
+To clone from the command line use:
+
 %git clone https://github.com/predsci/projectzed.git
+
+———————————
+data
+———————————
+
+This directory holds the OMNI_M 1-hour data base going back to the early 1970's.
+See the omni.text file in this directory for specific details.
 
 ———————————
 Running 
 ———————————
 
-Change directory to the R codes directory
+Change directory to the codes directory
 
 % cd projectzed/codes
 
@@ -38,10 +49,50 @@ or from within an R session:
 
 The util.R script includes functions used by forecast.R
 
-——————————————————————
-Questions/Problems:
-——————————————————————
-Please email mbennun@predsci.com
+To re-create the data used in Figures 3-7 9-10 we advise using the provided Python script:
+
+run-batchPattRec.py
+
+This script, which is simple and easy to modify, will launch 12 parallel instances of calls to
+the batchPattRec.R routine which is the batch version of the pattern recognition procedure.
+Each instance is a month number and the User can modify the year, variable and forecasting time window.
+Results are written to a sub-directory that is unique to a variable and forecasting time window, e.g. 
+corr-coh-Bn-24hr.
+The sub-directory with the results will be created under the working directory, codes, so it does not
+over-write the results we already provide. 
+
+To run it use:
+% ./run-batchPattRec.py > log &
+
+Please note that we provide all the results of running this script on the 2000-2010 time period
+for the variables Bn, vr, Temp and np (density) for forecasting windows of 24 hours and 6 hours, see 
+the explanation of Results below. 
+
+batchPattRec.R can only be excuted from the command line.  It accpets as arguments the variable
+name (e.g. Bn, vr, Temp, np) the forecasting time window in units of hours (e.g. 24, 6) and the month and
+year for which we want to run the batch pattern recognition. It serves as a driver for the function pattRecbatch
+which is in the pattRec.R file. 
+
+To run it from the comman line and not using the Python script use for example:
+%Rscript batchPattRec.R whvar Bn wwindow 24 month 02 year 2010
+
+The pattRec.R script holds the batch pattern recognition function, pattRecBatch. 
+It is called by the batchPattRec.R driver.
+
+———————————
+results
+———————————
+This directory holds all the results required to create figures 3-7, 9-10.  These results were generated
+using the above described run-batchPattRec.py  script. Specifically we run the script for every year between 
+2000 to 2010 (inclusive), for the variables: Bn, vr, Temp and np, and for forecasting time windows of 24 hours 
+and 6 hours.  
+These results do NOT get over-written if you run the python script, see explanation above.
+
+———————————
+plots
+———————————
+This directory holds all the plots that forecast.R and anal-corr-coh.R create.  If you run these R codes
+the plots will be over-written.
 
 ——————————————————————
 Questions/Problems:
