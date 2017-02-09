@@ -101,8 +101,8 @@ plotMag <- function(ddate, Bn, date1, wwindow = 24, models, smodels, nsmooth = 0
 	BnBaseline = 0 * Bn
 	nBn = length(Bn)
 
-	ipred = ((ddate >= date1) & (ddate <= xmax))
-	isub = ((ddate >= xmin) & (ddate <= xmax))
+	ipred = which((ddate >= date1) & (ddate <= xmax))
+	isub = which((ddate >= xmin) & (ddate <= xmax))
 	imodels = (models == T)
 
 	obs51 = 0
@@ -110,7 +110,8 @@ plotMag <- function(ddate, Bn, date1, wwindow = 24, models, smodels, nsmooth = 0
 		obs51 = 100
 	}
 
-	plot(ddate[isub], Bn[isub], ylim = c(-bmax, bmax), ylab = "Bn (nT)", cex = symSize, xlab = "Time (Date)", xlim = c(xmin, xmax), type = "n", xaxt = "n", lwd = 1)
+	plot(ddate[isub], Bn[isub], ylim = c(-bmax, bmax), ylab = "Bn (nT)", cex = symSize, xlab = "Time (Date)", xlim = c(xmin,xmax), type = "n", xaxt = "n", lwd = 1) 
+
 	axis.POSIXct(1, at = seq(xmin, xmax, by = "day"), format = "%m/%d/%y")
 
 
@@ -144,10 +145,11 @@ plotMag <- function(ddate, Bn, date1, wwindow = 24, models, smodels, nsmooth = 0
 		}
 		ypoly = c(quantArr[2, ], rev(quantArr[4, ]))
 		xpoly = c(ddate[ipred], rev(ddate[ipred]))
+		print(xpoly)
 		if (plotQuantiles == "yes") {
 			polygon(xpoly, ypoly, col = rgb(0, 1, 0, 0.3), border = NA)
 		}
-		points(ddate[ipred], meanBnPred, col = cmodels[5], lwd = mlwd, type = "l")
+		lines(ddate[ipred], meanBnPred, col = cmodels[2], lwd = mlwd,type='l')
 		if (plotQuantiles == "yes") {
 			text(xmax - (xmax - xmin)/8, -bmax, "25/75% Quantiles", cex = cex1, col = "green3")
 		}
@@ -273,7 +275,7 @@ plotVr <- function(ddate,vr,date1=date1,wwindow=wwindow,
  		polygon(xpoly, ypoly, col = rgb(0, 1, 0, 0.3), border = NA)
  		text(xmax - (xmax - xmin)/8, vmin, "25/75% Quantiles", cex = cex1, col = "green3")
  	}
- 	points(ddate[ipred], meanVrPred, col = cmodels[5], lwd = mlwd, type = "l")
+ 	lines(ddate[ipred], meanVrPred, col = cmodels[2], lwd = mlwd, type = "l")
  	corrVec[2] = cor(vr[ipred], meanVrPred, method = "pearson", use = "complete")
  	probFor[2] = sum(probForAll)/ncol
  	MSE[2] = mse(meanVrPred, vr[ipred], na.rm = T)

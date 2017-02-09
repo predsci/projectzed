@@ -213,7 +213,6 @@ for (ievent in 1:nevents) {
 	## convert the date and time to POSIX value XXX
 	date1 = ISOdate(ymd, hhour, mmin, ssec, tz = "UTC")
 
-
 	## calculate and plot the Bn model results - for Figures 1 and 2a/2b
 	
 	if (plotB == "yes") {
